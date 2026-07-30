@@ -18,7 +18,6 @@ class MemoryEventStore:
         return (self._branch_key(commit.tenant_id, commit.editorial_id, commit.work_id, commit.branch), command_type, key)
     def append_commit(self, commit: EditorialCommit, idempotency_key: Optional[str] = None, command_type: str = "legacy", payload_hash: Optional[str] = None) -> None:
         if commit.commit_id in self._commits: raise DuplicateCommitError(f"El commit con ID '{commit.commit_id}' ya existe.")
-        if commit.branch != "main": raise InvalidCommitParentError("Sólo main es operativa en este corte.")
         if any((e.tenant_id,e.editorial_id,e.work_id)!=(commit.tenant_id,commit.editorial_id,commit.work_id) for e in commit.events): raise ValueError("Todos los eventos deben pertenecer al stream del commit.")
         if any(e.event_id in self._events for e in commit.events): raise DuplicateEventError("Un event_id ya existe.")
         stream = self._branch_key(commit.tenant_id,commit.editorial_id,commit.work_id,commit.branch); history=self._branches.get(stream,[])
@@ -51,3 +50,6 @@ class MemoryEventStore:
         for (_,_, stored), (commit_id, _) in self._idempotency.items():
             if stored == key: return self._commits[commit_id]
         return None
+
+    def branch_exists(self, tenant_id, editorial_id, work_id, branch: str) -> bool:
+        return self._branch_key(tenant_id, editorial_id, work_id, branch) in self._branches

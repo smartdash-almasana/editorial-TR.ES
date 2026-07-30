@@ -1,11 +1,12 @@
 """Domain events for the neoliterary kernel."""
 from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Any, Literal, Mapping
+from typing import Any, Literal, Mapping, Optional
 from pydantic import BaseModel, Field, field_serializer, field_validator
 from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
 class DomainEvent(BaseModel):
     event_id: str; event_type: str; tenant_id: TenantId; editorial_id: EditorialId; work_id: WorkId
+    origin_event_id: Optional[str] = None
     aggregate_version: int = Field(..., ge=1); occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)); actor_id: ActorId
     payload: Mapping[str, Any] = Field(default_factory=dict); model_config = {"frozen": True}
     @field_validator("payload")

@@ -3,12 +3,12 @@ import hashlib, json, uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterable
-from editorial_tres.application.commands import AddContentBlockCommand, CreateWorkCommand, EditContentBlockCommand, RegisterDependencyCommand
+from editorial_tres.application.commands import AddContentBlockCommand, CreateWorkCommand, EditContentBlockCommand, RegisterDependencyCommand, CreateBranchCommand
 from editorial_tres.application.projections import CurrentWorkProjection
 from editorial_tres.domain.commits import EditorialCommit
 from editorial_tres.domain.events import create_content_block_added_event, create_content_block_edited_event, create_dependency_registered_event, create_derived_resource_invalidated_event, create_work_created_event
 from editorial_tres.domain.work import Work
-from editorial_tres.exceptions import ConcurrencyError, WorkAlreadyExistsError
+from editorial_tres.exceptions import ConcurrencyError, WorkAlreadyExistsError, BranchAlreadyExistsError, BranchNotFoundError
 @dataclass(frozen=True)
 class CommandResult: work_id:str; commit_id:str; event_id:str; version:int; status:str
 CreateWorkResult=CommandResult
@@ -21,7 +21,7 @@ class _Handler:
     def _persist(self,command,events: Iterable,message):
         events=tuple(events); head=self._event_store.get_head_commit(command.tenant_id,command.editorial_id,command.work_id,command.branch)
         commit=EditorialCommit(commit_id=f"commit-{uuid.uuid4().hex[:16]}",tenant_id=command.tenant_id,editorial_id=command.editorial_id,work_id=command.work_id,branch=command.branch,parent_commit_id=head.commit_id if head else None,events=events,message=message,actor_id=command.actor_id,created_at=events[0].occurred_at)
-        self._event_store.append_commit(commit,command.idempotency_key,type(command).__name__,_hash(command)); self._work_projection.rebuild_work(self._event_store.get_events(command.tenant_id,command.editorial_id,command.work_id,command.branch)); return _result(commit)
+        self._event_store.append_commit(commit,command.idempotency_key,type(command).__name__,_hash(command)); self._work_projection.rebuild_work(self._event_store.get_events(command.tenant_id,command.editorial_id,command.work_id,command.branch), branch=command.branch); return _result(commit)
 class CreateWorkHandler(_Handler):
     def handle(self,command:CreateWorkCommand):
         existing=self._idempotent(command)
@@ -53,3 +53,44 @@ class RegisterDependencyHandler(_Handler):
         event=create_dependency_registered_event(event_id=f"evt-{uuid.uuid4().hex[:16]}",tenant_id=command.tenant_id,editorial_id=command.editorial_id,work_id=command.work_id,aggregate_version=work.version+1,actor_id=command.actor_id,occurred_at=datetime.now(timezone.utc),dependency=dependency)
         return self._persist(command,(event,),f"dependency.registered: {command.source_resource_id}->{command.dependent_resource_id}")
 
+class CreateBranchHandler(_Handler):
+    def handle(self, command: CreateBranchCommand):
+        existing = self._idempotent(command)
+        if existing:
+            return _result(existing)
+        if not self._event_store.branch_exists(command.tenant_id, command.editorial_id, command.work_id, command.source_branch):
+            raise BranchNotFoundError(f"La rama origen '{command.source_branch}' no existe.")
+        if self._event_store.branch_exists(command.tenant_id, command.editorial_id, command.work_id, command.target_branch):
+            raise BranchAlreadyExistsError(f"La rama destino '{command.target_branch}' ya existe.")
+        source_events = self._event_store.get_events(command.tenant_id, command.editorial_id, command.work_id, command.source_branch)
+        max_source_version = max(e.aggregate_version for e in source_events)
+        if command.source_version is not None:
+            if command.source_version < 1 or command.source_version > max_source_version:
+                raise ConcurrencyError(f"La versión solicitada {command.source_version} no existe en la rama origen (máxima versión: {max_source_version}).")
+            cutoff_version = command.source_version
+        else:
+            cutoff_version = max_source_version
+        events_to_copy = [e for e in source_events if e.aggregate_version <= cutoff_version]
+        copied_events = []
+        for e in events_to_copy:
+            copied_events.append(e.model_copy(update={
+                "event_id": f"evt-{uuid.uuid4().hex[:16]}",
+                "origin_event_id": e.event_id,
+            }))
+        commit = EditorialCommit(
+            commit_id=f"commit-{uuid.uuid4().hex[:16]}",
+            tenant_id=command.tenant_id,
+            editorial_id=command.editorial_id,
+            work_id=command.work_id,
+            branch=command.target_branch,
+            parent_commit_id=None,
+            parent_branch=command.source_branch,
+            parent_branch_version=cutoff_version,
+            events=tuple(copied_events),
+            message=f"Fork de la rama {command.source_branch} en la versión {cutoff_version}",
+            actor_id=command.actor_id,
+            created_at=copied_events[0].occurred_at if copied_events else datetime.now(timezone.utc)
+        )
+        self._event_store.append_commit(commit, command.idempotency_key, type(command).__name__, _hash(command))
+        self._work_projection.rebuild_work(self._event_store.get_events(command.tenant_id, command.editorial_id, command.work_id, command.target_branch), branch=command.target_branch)
+        return _result(commit)

@@ -12,6 +12,8 @@ class EditorialCommit(BaseModel):
     work_id: WorkId
     branch: str = "main"
     parent_commit_id: Optional[str] = None
+    parent_branch: Optional[str] = None
+    parent_branch_version: Optional[int] = None
     events: Tuple[DomainEvent, ...] = Field(default_factory=tuple)
     message: str = ""
     actor_id: ActorId
@@ -29,6 +31,6 @@ class EditorialCommit(BaseModel):
     @field_validator("branch")
     @classmethod
     def _validate_branch(cls, value: str) -> str:
-        if value != "main":
-            raise ValueError("En este corte sólo está habilitada la rama 'main'.")
-        return value
+        if not value or not value.strip():
+            raise ValueError("El nombre de la rama no puede estar vacío.")
+        return value.strip()

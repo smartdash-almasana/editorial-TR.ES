@@ -124,3 +124,21 @@ class IdempotencyConflictError(EditorialTresError):
     """Lanzada cuando se reutiliza una idempotency_key con datos distintos."""
 
     pass
+
+
+class BranchAlreadyExistsError(EditorialTresError):
+    """Lanzada cuando se intenta crear una rama que ya existe."""
+
+    pass
+
+
+class BranchNotFoundError(EditorialTresError):
+    """Lanzada cuando la rama origen no existe."""
+
+    pass
+
+
+class InvalidBranchError(EditorialTresError):
+    """Lanzada cuando un nombre de rama es inválido o vacío."""
+
+    pass
