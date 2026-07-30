@@ -3,7 +3,7 @@ import hashlib, json, uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterable
-from editorial_tres.application.commands import AddContentBlockCommand, CreateWorkCommand, EditContentBlockCommand, RegisterDependencyCommand, CreateBranchCommand
+from editorial_tres.application.commands import AddContentBlockCommand, ApplyApprovedPatchCommand, CreateWorkCommand, EditContentBlockCommand, RegisterDependencyCommand, CreateBranchCommand
 from editorial_tres.application.projections import CurrentWorkProjection
 from editorial_tres.domain.commits import EditorialCommit
 from editorial_tres.domain.events import create_content_block_added_event, create_content_block_edited_event, create_dependency_registered_event, create_derived_resource_invalidated_event, create_work_created_event
@@ -94,3 +94,89 @@ class CreateBranchHandler(_Handler):
         self._event_store.append_commit(commit, command.idempotency_key, type(command).__name__, _hash(command))
         self._work_projection.rebuild_work(self._event_store.get_events(command.tenant_id, command.editorial_id, command.work_id, command.target_branch), branch=command.target_branch)
         return _result(commit)
+
+
+class ApplyApprovedPatchHandler(_Handler):
+    """Apply one approved Patch atomically through the canonical event stream."""
+
+    def handle(self, command: ApplyApprovedPatchCommand):
+        existing = self._idempotent(command)
+        if existing:
+            return _result(existing)
+
+        events = self._event_store.get_events(
+            command.tenant_id,
+            command.editorial_id,
+            command.work_id,
+            command.branch,
+        )
+        work = Work.replay(events)
+        if command.expected_version != work.version:
+            raise ConcurrencyError(
+                f"El Patch fue aprobado sobre la versión {command.expected_version}, "
+                f"pero la obra está en la versión {work.version}."
+            )
+
+        commit_events = []
+        next_version = work.version
+        invalidated = set()
+
+        for operation in command.patch.operations:
+            block = work.expression_graph.get_block(operation.block_id)
+            if block is None:
+                raise ValueError(f"El bloque '{operation.block_id}' ya no existe en la obra.")
+            if block.content != operation.before_content:
+                raise ConcurrencyError(
+                    f"El bloque '{operation.block_id}' ya no coincide con el contenido aprobado."
+                )
+
+            next_version += 1
+            updated_block = block.model_copy(update={"content": operation.after_content})
+            block_payload = {
+                "id": updated_block.id,
+                "block_type": updated_block.block_type,
+                "content": updated_block.content,
+                "parent_id": updated_block.parent_id,
+                "position": updated_block.position,
+                "language": updated_block.language,
+                "status": updated_block.status,
+                "metadata": dict(updated_block.metadata),
+            }
+            edit_event = create_content_block_edited_event(
+                event_id=f"evt-{uuid.uuid4().hex[:16]}",
+                tenant_id=command.tenant_id,
+                editorial_id=command.editorial_id,
+                work_id=command.work_id,
+                aggregate_version=next_version,
+                actor_id=command.actor_id,
+                occurred_at=datetime.now(timezone.utc),
+                block=block_payload,
+            )
+            commit_events.append(edit_event)
+
+            for dependency in work.dependency_graph.transitive_dependents(operation.block_id):
+                key = (operation.block_id, dependency.dependent_resource_id)
+                if key in invalidated:
+                    continue
+                invalidated.add(key)
+                next_version += 1
+                commit_events.append(
+                    create_derived_resource_invalidated_event(
+                        event_id=f"evt-{uuid.uuid4().hex[:16]}",
+                        tenant_id=command.tenant_id,
+                        editorial_id=command.editorial_id,
+                        work_id=command.work_id,
+                        aggregate_version=next_version,
+                        actor_id=command.actor_id,
+                        occurred_at=edit_event.occurred_at,
+                        source_resource_id=operation.block_id,
+                        dependent_resource_id=dependency.dependent_resource_id,
+                        source_version=edit_event.aggregate_version,
+                    )
+                )
+
+        return self._persist(
+            command,
+            commit_events,
+            f"patch.applied: {command.patch.patch_id}",
+        )

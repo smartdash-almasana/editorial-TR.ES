@@ -2,15 +2,26 @@
 Resolución de la composición de plugins para un proyecto editorial.
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Set
 from pydantic import BaseModel, Field
 
+from editorial_tres.application.handlers import (
+    AddContentBlockHandler,
+    ApplyApprovedPatchHandler,
+    CreateBranchHandler,
+    CreateWorkHandler,
+    EditContentBlockHandler,
+    RegisterDependencyHandler,
+)
+from editorial_tres.application.projections import CurrentWorkProjection
 from editorial_tres.exceptions import (
     IncompatibilityError,
     MissingDependencyError,
     PluginNotFoundError,
 )
+from editorial_tres.infrastructure.sqlite.event_store import SQLiteEventStore
 from editorial_tres.plugin_contract import PluginManifest
 from editorial_tres.plugin_registry import PluginRegistry
 from editorial_tres.project_manifest import ProjectManifest
@@ -126,4 +137,52 @@ def compose_project(project_path: Path, plugins_root: Path) -> ProjectCompositio
         resolved_plugins=final_resolved_list,
         plugins_by_type=plugins_by_type,
         composition_order=composition_order,
+    )
+
+
+@dataclass
+class EditorialApplication:
+    """Runtime dependencies assembled around the persistent Event Store."""
+
+    event_store: SQLiteEventStore
+    current_work_projection: CurrentWorkProjection
+    create_work: CreateWorkHandler
+    add_content_block: AddContentBlockHandler
+    apply_approved_patch: ApplyApprovedPatchHandler
+    edit_content_block: EditContentBlockHandler
+    register_dependency: RegisterDependencyHandler
+    create_branch: CreateBranchHandler
+
+    def rebuild_work(self, tenant_id, editorial_id, work_id, branch: str = "main") -> None:
+        """Rebuild one current-work read model from its persisted event stream."""
+        events = self.event_store.get_events(tenant_id, editorial_id, work_id, branch)
+        self.current_work_projection.rebuild_work(events, branch=branch)
+
+    def close(self) -> None:
+        self.event_store.close()
+
+    def __enter__(self) -> "EditorialApplication":
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.close()
+
+
+def compose_application(database_path: str | Path) -> EditorialApplication:
+    """Assemble the application runtime with a SQLite-backed Event Store.
+
+    Tests can continue wiring handlers with ``MemoryEventStore`` directly.  The
+    production composition path always creates the persistent adapter.
+    """
+    event_store = SQLiteEventStore(database_path)
+    projection = CurrentWorkProjection()
+    return EditorialApplication(
+        event_store=event_store,
+        current_work_projection=projection,
+        create_work=CreateWorkHandler(event_store, projection),
+        add_content_block=AddContentBlockHandler(event_store, projection),
+        apply_approved_patch=ApplyApprovedPatchHandler(event_store, projection),
+        edit_content_block=EditContentBlockHandler(event_store, projection),
+        register_dependency=RegisterDependencyHandler(event_store, projection),
+        create_branch=CreateBranchHandler(event_store, projection),
     )
