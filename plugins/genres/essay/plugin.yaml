@@ -1,0 +1,10 @@
+id: genre.essay
+version: 0.1.0
+type: genre
+name: Ensayo
+description: Estructura editorial básica para ensayos.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []

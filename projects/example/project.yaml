@@ -1,0 +1,16 @@
+id: example
+title: Proyecto de ejemplo
+language: es-AR
+
+plugins:
+  genre: genre.essay
+  voice: voice.default
+  narrator: narrator.reflective
+  styles:
+    - style.literary
+  reviewers:
+    - reviewer.structural
+  visuals:
+    - visual.infographic
+  outputs:
+    - output.manuscript

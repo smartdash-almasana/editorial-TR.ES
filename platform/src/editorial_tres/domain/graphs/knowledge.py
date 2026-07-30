@@ -1,0 +1,30 @@
+"""Knowledge graph."""
+from types import MappingProxyType
+from typing import Mapping, Optional, List
+from pydantic import field_serializer, Field, field_validator
+from editorial_tres.domain.graphs.base import BaseGraph, GraphNode
+from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
+from editorial_tres.exceptions import MissingParentNodeError
+
+class KnowledgeNode(GraphNode):
+    node_type: str = Field(default="concept")
+    model_config = {"frozen": True}
+
+class KnowledgeGraph(BaseGraph):
+    work_id: WorkId
+    tenant_id: Optional[TenantId] = None
+    editorial_id: Optional[EditorialId] = None
+    nodes: Mapping[str, KnowledgeNode] = Field(default_factory=dict)
+    @field_validator("nodes")
+    @classmethod
+    def _freeze_nodes(cls, value): return MappingProxyType(dict(value))
+    @field_serializer("nodes")
+    def _serialize_nodes(self, value): return dict(value)
+    def add_node(self, node: KnowledgeNode) -> "KnowledgeGraph":
+        self._check_duplicate(node.id)
+        if node.parent_id and not self.has_node(node.parent_id):
+            raise MissingParentNodeError(f"El nodo padre '{node.parent_id}' no existe en el grafo de conocimiento.")
+        return KnowledgeGraph(work_id=self.work_id, tenant_id=self.tenant_id, editorial_id=self.editorial_id, nodes={**self.nodes, node.id: node})
+    def get_nodes_by_type(self, node_type: str) -> List[KnowledgeNode]: return [n for n in self.nodes.values() if n.node_type == node_type]
+
+

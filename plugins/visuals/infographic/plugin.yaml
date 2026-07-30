@@ -1,0 +1,10 @@
+id: visual.infographic
+version: 0.1.0
+type: visual
+name: Factoría infográfica
+description: Plantillas y composición tipográfica para infografías.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []

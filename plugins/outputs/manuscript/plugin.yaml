@@ -1,0 +1,10 @@
+id: output.manuscript
+version: 0.1.0
+type: output
+name: Salida manuscrito
+description: Compilador de entregable manuscrito tradicional.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []

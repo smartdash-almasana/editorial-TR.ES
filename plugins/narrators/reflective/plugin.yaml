@@ -1,0 +1,10 @@
+id: narrator.reflective
+version: 0.1.0
+type: narrator
+name: Narrador reflexivo
+description: Perspectiva narrativa analítica e introspectiva.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []

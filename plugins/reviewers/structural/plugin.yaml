@@ -1,0 +1,10 @@
+id: reviewer.structural
+version: 0.1.0
+type: reviewer
+name: Revisor estructural
+description: Reglas de coherencia y arquitectura argumental.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []

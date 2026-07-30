@@ -1,0 +1,10 @@
+id: voice.default
+version: 0.1.0
+type: voice
+name: Voz por defecto
+description: Perfil de voz autoral neutro y claro.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []

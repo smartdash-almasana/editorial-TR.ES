@@ -1,0 +1,10 @@
+id: style.literary
+version: 0.1.0
+type: style
+name: Estilo literario
+description: Normas estilísticas para prosa cuidada.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []
