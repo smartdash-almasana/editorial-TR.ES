@@ -60,6 +60,30 @@ class Work(BaseModel):
         elif event.event_type == "content_block.edited":
             expression_graph = expression_graph.edit_block(ContentBlock.model_validate(event.payload["block"]))
             manuscript_version += 1
+        elif event.event_type == "content_block.deleted":
+            block_id = event.payload["block_id"]
+            expected_block = ContentBlock.model_validate(event.payload["before_block"])
+            current_block = expression_graph.get_block(block_id)
+            if current_block != expected_block:
+                raise ValueError(f"El estado previo del bloque '{block_id}' no coincide con el stream.")
+            expression_graph = expression_graph.delete_block(block_id)
+            manuscript_version += 1
+        elif event.event_type == "content_block.moved":
+            block_id = event.payload["block_id"]
+            current_block = expression_graph.get_block(block_id)
+            if current_block is None:
+                raise ValueError(f"El bloque '{block_id}' no existe en el stream.")
+            if (
+                current_block.parent_id != event.payload["before_parent_id"]
+                or current_block.position != event.payload["before_position"]
+            ):
+                raise ValueError(f"El estado previo del bloque '{block_id}' no coincide con el stream.")
+            expression_graph = expression_graph.move_block(
+                block_id,
+                parent_id=event.payload["after_parent_id"],
+                position=event.payload["after_position"],
+            )
+            manuscript_version += 1
         elif event.event_type == "dependency.registered": dependency_graph = dependency_graph.register(ResourceDependency.model_validate(event.payload["dependency"]))
         elif event.event_type == "derived_resource.invalidated": dependency_graph = dependency_graph.mark_stale(event.payload["dependent_resource_id"], event.payload["source_version"])
         elif event.event_type in {"review.finding_recorded", "review.finding_decided"}: pass

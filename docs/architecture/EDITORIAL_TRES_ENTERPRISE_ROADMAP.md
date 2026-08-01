@@ -65,20 +65,23 @@ El Corte 1 queda cerrado. La evidencia final registró `10 passed` en focales, `
 
 ## Corte 2 — Operaciones estructurales mínimas de Patch
 
+**Estado:** `CLOSED_PASS`
+**Evidencia de cierre:** `62 passed` en focales, `256 passed` en suite completa y espacios finales reportados corregidos; `git diff --check` debe reconfirmarse antes del commit.
+
 ### Objetivo
 
 Permitir curado estructural gobernado sin abandonar `Patch → ApprovalGate → Commit`.
 
 ### Alcance
 
-1. Convertir `PatchOperation` en unión discriminada.
-2. Conservar `ReplaceContent`.
-3. Agregar `InsertBlock`.
-4. Agregar `DeleteBlock`.
-5. Agregar `MoveBlock`.
-6. Validar todas las precondiciones antes de persistir.
-7. Aplicar el patch como un único commit atómico.
-8. Invalidar derivados afectados.
+1. **Implementado:** convertir `PatchOperation` en unión discriminada.
+2. **Implementado:** conservar `ReplaceContent`.
+3. **Implementado:** agregar `InsertBlock`.
+4. **Implementado:** agregar `DeleteBlock`.
+5. **Implementado:** agregar `MoveBlock`.
+6. **Implementado:** validar todas las precondiciones antes de persistir.
+7. **Implementado:** aplicar el patch como un único commit atómico.
+8. **Implementado:** invalidar derivados afectados.
 
 ### Criterios de cierre
 

@@ -37,9 +37,10 @@ def setup_work():
 def register(store, projection, source, dependent, expected_version, key, dependent_type="pdf"):
     return RegisterDependencyHandler(store, projection).handle(command(RegisterDependencyCommand, command_id=f"register-{key}", idempotency_key=f"register-{key}", expected_version=expected_version, source_resource_id=source, dependent_resource_id=dependent, source_resource_type="content_block", dependent_resource_type=dependent_type, source_version=1))
 
-def test_direct_and_transitive_dependencies_are_deterministic():
+def test_direct_incoming_and_transitive_dependencies_are_deterministic():
     value = graph(dependency("block", "summary", dependent_type="summary"), dependency("summary", "pdf"), dependency("block", "metadata", dependent_type="metadata"))
     assert [item.dependent_resource_id for item in value.direct_dependents("block")] == ["metadata", "summary"]
+    assert [item.source_resource_id for item in value.incoming_dependencies("summary")] == ["block"]
     assert [item.dependent_resource_id for item in value.transitive_dependents("block")] == ["metadata", "summary", "pdf"]
 
 def test_multiple_and_missing_dependencies():

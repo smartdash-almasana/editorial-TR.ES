@@ -48,6 +48,12 @@ class DependencyGraph(BaseModel):
     def direct_dependents(self, resource_id: str) -> List[ResourceDependency]:
         return sorted((item for item in self.dependencies if item.source_resource_id == resource_id), key=lambda item: (item.dependent_resource_type, item.dependent_resource_id))
 
+    def incoming_dependencies(self, resource_id: str) -> List[ResourceDependency]:
+        return sorted(
+            (item for item in self.dependencies if item.dependent_resource_id == resource_id),
+            key=lambda item: (item.source_resource_type, item.source_resource_id),
+        )
+
     def transitive_dependents(self, resource_id: str) -> List[ResourceDependency]:
         result: List[ResourceDependency] = []
         visited = {resource_id}

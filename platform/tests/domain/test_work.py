@@ -248,3 +248,144 @@ def test_work_empty_title_rejected():
             actor_id=actor_id,
             event_id="evt-001",
         )
+
+
+def test_expression_graph_delete_block_is_immutable():
+    tenant_id, editorial_id, work_id, actor_id = _make_ids()
+    work = Work.create(
+        tenant_id=tenant_id,
+        editorial_id=editorial_id,
+        work_id=work_id,
+        title="Test",
+        language="es",
+        actor_id=actor_id,
+        event_id="evt-delete",
+    )
+    block = ContentBlock(
+        id="block-delete",
+        block_type="paragraph",
+        content="Eliminar",
+    )
+    original = work.expression_graph.add_block(block)
+
+    deleted = original.delete_block("block-delete")
+
+    assert original.get_block("block-delete") == block
+    assert deleted.get_block("block-delete") is None
+
+
+def test_expression_graph_rejects_deleting_parent_with_children():
+    tenant_id, editorial_id, work_id, actor_id = _make_ids()
+    work = Work.create(
+        tenant_id=tenant_id,
+        editorial_id=editorial_id,
+        work_id=work_id,
+        title="Test",
+        language="es",
+        actor_id=actor_id,
+        event_id="evt-delete-parent",
+    )
+    parent = ContentBlock(
+        id="parent",
+        block_type="heading",
+        content="",
+    )
+    child = ContentBlock(
+        id="child",
+        block_type="paragraph",
+        content="Hijo",
+        parent_id="parent",
+    )
+    graph = work.expression_graph.add_block(parent).add_block(child)
+
+    with pytest.raises(ValueError, match="tenga hijos"):
+        graph.delete_block("parent")
+
+
+def test_content_block_metadata_serializes_to_json_without_losing_immutability():
+    block = ContentBlock(
+        id="block-json",
+        block_type="paragraph",
+        content="Serializable",
+        metadata={"role": "test"},
+    )
+
+    assert type(block.metadata).__name__ == "mappingproxy"
+    assert block.model_dump(mode="json")["metadata"] == {"role": "test"}
+
+
+
+def test_expression_graph_move_block_is_immutable_and_preserves_content():
+    tenant_id, editorial_id, work_id, actor_id = _make_ids()
+    work = Work.create(
+        tenant_id=tenant_id,
+        editorial_id=editorial_id,
+        work_id=work_id,
+        title="Test move",
+        language="es",
+        actor_id=actor_id,
+        event_id="evt-move",
+    )
+    first_parent = ContentBlock(
+        id="parent-1",
+        block_type="heading",
+        content="",
+        position=0,
+    )
+    second_parent = ContentBlock(
+        id="parent-2",
+        block_type="heading",
+        content="",
+        position=1,
+    )
+    child = ContentBlock(
+        id="child",
+        block_type="paragraph",
+        content="Contenido preservado",
+        parent_id="parent-1",
+        position=0,
+        metadata={"role": "body"},
+    )
+    original = (
+        work.expression_graph
+        .add_block(first_parent)
+        .add_block(second_parent)
+        .add_block(child)
+    )
+
+    moved = original.move_block("child", parent_id="parent-2", position=3)
+
+    assert original.get_block("child").parent_id == "parent-1"
+    assert original.get_block("child").position == 0
+    assert moved.get_block("child").parent_id == "parent-2"
+    assert moved.get_block("child").position == 3
+    assert moved.get_block("child").content == "Contenido preservado"
+    assert dict(moved.get_block("child").metadata) == {"role": "body"}
+
+
+def test_expression_graph_move_block_rejects_descendant_as_parent():
+    tenant_id, editorial_id, work_id, actor_id = _make_ids()
+    work = Work.create(
+        tenant_id=tenant_id,
+        editorial_id=editorial_id,
+        work_id=work_id,
+        title="Test move cycle",
+        language="es",
+        actor_id=actor_id,
+        event_id="evt-move-cycle",
+    )
+    parent = ContentBlock(
+        id="parent",
+        block_type="heading",
+        content="",
+    )
+    child = ContentBlock(
+        id="child",
+        block_type="paragraph",
+        content="Hijo",
+        parent_id="parent",
+    )
+    graph = work.expression_graph.add_block(parent).add_block(child)
+
+    with pytest.raises(GraphCycleError, match="ciclo"):
+        graph.move_block("parent", parent_id="child", position=0)

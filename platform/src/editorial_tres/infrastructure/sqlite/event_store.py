@@ -8,7 +8,9 @@ from typing import Optional
 from editorial_tres.domain.commits import EditorialCommit
 from editorial_tres.domain.events import (
     ContentBlockAdded,
+    ContentBlockDeleted,
     ContentBlockEdited,
+    ContentBlockMoved,
     DependencyRegistered,
     DerivedResourceInvalidated,
     DomainEvent,
@@ -27,7 +29,9 @@ from editorial_tres.exceptions import (
 
 _EVENT_MODELS = {
     "content_block.added": ContentBlockAdded,
+    "content_block.deleted": ContentBlockDeleted,
     "content_block.edited": ContentBlockEdited,
+    "content_block.moved": ContentBlockMoved,
     "dependency.registered": DependencyRegistered,
     "derived_resource.invalidated": DerivedResourceInvalidated,
     "review.finding_recorded": ReviewFindingRecorded,

@@ -6,7 +6,8 @@ from typing import Any, Iterable
 from editorial_tres.application.commands import AddContentBlockCommand, ApplyApprovedPatchCommand, CreateWorkCommand, EditContentBlockCommand, RegisterDependencyCommand, CreateBranchCommand, RecordReviewFindingCommand, DecideReviewFindingCommand
 from editorial_tres.application.projections import CurrentWorkProjection
 from editorial_tres.domain.commits import EditorialCommit
-from editorial_tres.domain.events import create_content_block_added_event, create_content_block_edited_event, create_dependency_registered_event, create_derived_resource_invalidated_event, create_review_finding_decided_event, create_review_finding_recorded_event, create_work_created_event
+from editorial_tres.domain.events import create_content_block_added_event, create_content_block_deleted_event, create_content_block_edited_event, create_content_block_moved_event, create_dependency_registered_event, create_derived_resource_invalidated_event, create_review_finding_decided_event, create_review_finding_recorded_event, create_work_created_event
+from editorial_tres.domain.patches import DeleteBlockOperation, InsertBlockOperation, MoveBlockOperation
 from editorial_tres.domain.review_history import ReviewHistory
 from editorial_tres.domain.work import Work
 from editorial_tres.exceptions import ConcurrencyError, WorkAlreadyExistsError, BranchAlreadyExistsError, BranchNotFoundError
@@ -100,6 +101,19 @@ class CreateBranchHandler(_Handler):
 class ApplyApprovedPatchHandler(_Handler):
     """Apply one approved Patch atomically through the canonical event stream."""
 
+    @staticmethod
+    def _block_payload(block):
+        return {
+            "id": block.id,
+            "block_type": block.block_type,
+            "content": block.content,
+            "parent_id": block.parent_id,
+            "position": block.position,
+            "language": block.language,
+            "status": block.status,
+            "metadata": dict(block.metadata),
+        }
+
     def handle(self, command: ApplyApprovedPatchCommand):
         existing = self._idempotent(command)
         if existing:
@@ -118,11 +132,84 @@ class ApplyApprovedPatchHandler(_Handler):
                 f"pero la obra está en la versión {work.version}."
             )
 
-        commit_events = []
-        next_version = work.version
-        invalidated = set()
+        validated_graph = work.expression_graph
+        planned_operations = []
 
         for operation in command.patch.operations:
+            if isinstance(operation, InsertBlockOperation):
+                if work.expression_graph.has_block(operation.block_id):
+                    raise ValueError(
+                        f"El bloque '{operation.block_id}' ya existe en la obra."
+                    )
+                if (
+                    operation.parent_id is not None
+                    and not work.expression_graph.has_block(operation.parent_id)
+                ):
+                    raise ValueError(
+                        f"El bloque padre '{operation.parent_id}' no existe en el snapshot fuente."
+                    )
+                inserted_block = operation.to_content_block()
+                validated_graph = validated_graph.add_block(inserted_block)
+                planned_operations.append(("insert", operation, inserted_block))
+                continue
+
+            if isinstance(operation, DeleteBlockOperation):
+                block = work.expression_graph.get_block(operation.block_id)
+                if block is None:
+                    raise ValueError(f"El bloque '{operation.block_id}' ya no existe en la obra.")
+                if block.model_dump(mode="json") != operation.before_block.model_dump(mode="json"):
+                    raise ConcurrencyError(
+                        f"El bloque '{operation.block_id}' ya no coincide con el estado aprobado para eliminar."
+                    )
+                if work.expression_graph.get_children(operation.block_id):
+                    raise ValueError(
+                        f"El bloque '{operation.block_id}' no puede eliminarse mientras tenga hijos."
+                    )
+                dependents = work.dependency_graph.direct_dependents(operation.block_id)
+                if dependents:
+                    dependent_ids = ", ".join(item.dependent_resource_id for item in dependents)
+                    raise ValueError(
+                        f"El bloque '{operation.block_id}' no puede eliminarse mientras tenga dependientes registrados: {dependent_ids}."
+                    )
+                incoming_dependencies = work.dependency_graph.incoming_dependencies(
+                    operation.block_id
+                )
+                if incoming_dependencies:
+                    source_ids = ", ".join(
+                        sorted(dependency.source_resource_id for dependency in incoming_dependencies)
+                    )
+                    raise ValueError(
+                        f"El bloque '{operation.block_id}' no puede eliminarse mientras sea destino de dependencias registradas desde: {source_ids}."
+                    )
+                validated_graph = validated_graph.delete_block(operation.block_id)
+                planned_operations.append(("delete", operation, block))
+                continue
+
+            if isinstance(operation, MoveBlockOperation):
+                block = work.expression_graph.get_block(operation.block_id)
+                if block is None:
+                    raise ValueError(f"El bloque '{operation.block_id}' ya no existe en la obra.")
+                if (
+                    block.parent_id != operation.before_parent_id
+                    or block.position != operation.before_position
+                ):
+                    raise ConcurrencyError(
+                        f"El bloque '{operation.block_id}' ya no coincide con la ubicación aprobada."
+                    )
+                work.expression_graph.move_block(
+                    operation.block_id,
+                    parent_id=operation.after_parent_id,
+                    position=operation.after_position,
+                )
+                validated_graph = validated_graph.move_block(
+                    operation.block_id,
+                    parent_id=operation.after_parent_id,
+                    position=operation.after_position,
+                )
+                moved_block = validated_graph.get_block(operation.block_id)
+                planned_operations.append(("move", operation, moved_block))
+                continue
+
             block = work.expression_graph.get_block(operation.block_id)
             if block is None:
                 raise ValueError(f"El bloque '{operation.block_id}' ya no existe en la obra.")
@@ -130,19 +217,89 @@ class ApplyApprovedPatchHandler(_Handler):
                 raise ConcurrencyError(
                     f"El bloque '{operation.block_id}' ya no coincide con el contenido aprobado."
                 )
-
-            next_version += 1
             updated_block = block.model_copy(update={"content": operation.after_content})
-            block_payload = {
-                "id": updated_block.id,
-                "block_type": updated_block.block_type,
-                "content": updated_block.content,
-                "parent_id": updated_block.parent_id,
-                "position": updated_block.position,
-                "language": updated_block.language,
-                "status": updated_block.status,
-                "metadata": dict(updated_block.metadata),
-            }
+            validated_graph = validated_graph.edit_block(updated_block)
+            planned_operations.append(("replace", operation, updated_block))
+
+        commit_events = []
+        next_version = work.version
+        invalidated = set()
+        occurred_at = datetime.now(timezone.utc)
+
+        for operation_type, operation, block in planned_operations:
+            next_version += 1
+            block_payload = self._block_payload(block)
+
+            if operation_type == "insert":
+                commit_events.append(
+                    create_content_block_added_event(
+                        event_id=f"evt-{uuid.uuid4().hex[:16]}",
+                        tenant_id=command.tenant_id,
+                        editorial_id=command.editorial_id,
+                        work_id=command.work_id,
+                        aggregate_version=next_version,
+                        actor_id=command.actor_id,
+                        occurred_at=occurred_at,
+                        block=block_payload,
+                    )
+                )
+                continue
+
+            if operation_type == "delete":
+                commit_events.append(
+                    create_content_block_deleted_event(
+                        event_id=f"evt-{uuid.uuid4().hex[:16]}",
+                        tenant_id=command.tenant_id,
+                        editorial_id=command.editorial_id,
+                        work_id=command.work_id,
+                        aggregate_version=next_version,
+                        actor_id=command.actor_id,
+                        occurred_at=occurred_at,
+                        block_id=operation.block_id,
+                        before_block=block_payload,
+                    )
+                )
+                continue
+
+            if operation_type == "move":
+                move_event = create_content_block_moved_event(
+                    event_id=f"evt-{uuid.uuid4().hex[:16]}",
+                    tenant_id=command.tenant_id,
+                    editorial_id=command.editorial_id,
+                    work_id=command.work_id,
+                    aggregate_version=next_version,
+                    actor_id=command.actor_id,
+                    occurred_at=occurred_at,
+                    block_id=operation.block_id,
+                    before_parent_id=operation.before_parent_id,
+                    before_position=operation.before_position,
+                    after_parent_id=operation.after_parent_id,
+                    after_position=operation.after_position,
+                )
+                commit_events.append(move_event)
+
+                for dependency in work.dependency_graph.transitive_dependents(operation.block_id):
+                    key = (operation.block_id, dependency.dependent_resource_id)
+                    if key in invalidated:
+                        continue
+                    invalidated.add(key)
+                    next_version += 1
+                    commit_events.append(
+                        create_derived_resource_invalidated_event(
+                            event_id=f"evt-{uuid.uuid4().hex[:16]}",
+                            tenant_id=command.tenant_id,
+                            editorial_id=command.editorial_id,
+                            work_id=command.work_id,
+                            aggregate_version=next_version,
+                            actor_id=command.actor_id,
+                            occurred_at=occurred_at,
+                            source_resource_id=operation.block_id,
+                            dependent_resource_id=dependency.dependent_resource_id,
+                            source_version=move_event.aggregate_version,
+                        )
+                    )
+                continue
+
             edit_event = create_content_block_edited_event(
                 event_id=f"evt-{uuid.uuid4().hex[:16]}",
                 tenant_id=command.tenant_id,
@@ -150,7 +307,7 @@ class ApplyApprovedPatchHandler(_Handler):
                 work_id=command.work_id,
                 aggregate_version=next_version,
                 actor_id=command.actor_id,
-                occurred_at=datetime.now(timezone.utc),
+                occurred_at=occurred_at,
                 block=block_payload,
             )
             commit_events.append(edit_event)
@@ -169,7 +326,7 @@ class ApplyApprovedPatchHandler(_Handler):
                         work_id=command.work_id,
                         aggregate_version=next_version,
                         actor_id=command.actor_id,
-                        occurred_at=edit_event.occurred_at,
+                        occurred_at=occurred_at,
                         source_resource_id=operation.block_id,
                         dependent_resource_id=dependency.dependent_resource_id,
                         source_version=edit_event.aggregate_version,

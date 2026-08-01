@@ -1,7 +1,8 @@
 # ADR-005 — Operaciones editoriales tipadas dentro de Patch
 
-**Estado:** Aceptado  
+**Estado:** Aceptado — implementación cerrada (`CLOSED_PASS`)
 **Fecha:** 2026-07-31
+**Última actualización:** 2026-08-01
 
 ## Contexto
 
@@ -113,3 +114,34 @@ Estas capacidades sólo se abrirán mediante un caso productivo y un test que de
 3. `move` conserva el ID del bloque y valida origen/destino.
 4. Un patch stale o con before-state incorrecto no produce eventos.
 5. El flujo `Pass → Patch → ApprovalGate → Commit` permanece intacto.
+
+
+## Estado de implementación — 2026-08-01
+
+La decisión está implementada en el núcleo editorial con el siguiente contrato operativo:
+
+```text
+ReplaceContentOperation
+InsertBlockOperation
+DeleteBlockOperation
+MoveBlockOperation
+```
+
+La aplicación preserva las siguientes garantías:
+
+- unión discriminada e inmutable dentro de `Patch`;
+- compatibilidad del reemplazo textual existente;
+- prevalidación de todas las operaciones antes de construir eventos;
+- validación de inserciones contra el snapshot fuente;
+- eliminación con estado previo completo, rechazo de hijos y política explícita `dependent_policy="reject"`;
+- movimiento con origen y destino explícitos, preservación de ID y detección de ciclos;
+- un único `EditorialCommit` por Patch aprobado;
+- ausencia de persistencia parcial ante cualquier precondición inválida;
+- eventos canónicos `content_block.added`, `content_block.edited`, `content_block.deleted` y `content_block.moved`;
+- invalidación de derivados en reemplazos y movimientos;
+- replay equivalente en memoria y SQLite.
+
+La certificación integral combina las cuatro operaciones sobre IDs distintos, verifica el orden determinístico de eventos, el replay exacto y el aborto completo ante un `before-state` inválido.
+
+**Estado operativo:** `CLOSED_PASS`
+**Evidencia de cierre:** `62 passed` en focales, `256 passed` en suite completa y espacios finales reportados corregidos; `git diff --check` debe reconfirmarse antes del commit.

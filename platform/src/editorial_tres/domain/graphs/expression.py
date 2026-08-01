@@ -3,7 +3,7 @@ from types import MappingProxyType
 from typing import Any, Mapping, Optional, List
 from pydantic import field_serializer, BaseModel, Field, field_validator
 from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
-from editorial_tres.exceptions import DuplicateNodeError, MissingParentNodeError
+from editorial_tres.exceptions import DuplicateNodeError, GraphCycleError, MissingParentNodeError
 
 ALLOWED_BLOCK_TYPES = {"paragraph", "heading", "dialogue", "quote", "poem", "note"}
 ALLOWED_BLOCK_STATUSES = {"draft", "revised", "approved"}
@@ -23,6 +23,10 @@ class ContentBlock(BaseModel):
     @classmethod
     def _freeze_metadata(cls, value: Mapping[str, Any]) -> Mapping[str, Any]:
         return MappingProxyType(dict(value))
+
+    @field_serializer("metadata", when_used="json")
+    def _serialize_metadata(self, value: Mapping[str, Any]) -> dict[str, Any]:
+        return dict(value)
 
     @field_validator("block_type")
     @classmethod
@@ -69,6 +73,55 @@ class ExpressionGraph(BaseModel):
         if block.block_type != "heading" and not block.content.strip():
             raise ValueError(f"El contenido del bloque '{block.id}' no puede estar vacío.")
         return ExpressionGraph(work_id=self.work_id, tenant_id=self.tenant_id, editorial_id=self.editorial_id, blocks={**self.blocks, block.id: block})
+
+    def delete_block(self, block_id: str) -> "ExpressionGraph":
+        if block_id not in self.blocks:
+            raise MissingParentNodeError(f"El bloque '{block_id}' no existe en el grafo de expresión.")
+        if self.get_children(block_id):
+            raise ValueError(f"El bloque '{block_id}' no puede eliminarse mientras tenga hijos.")
+        remaining = dict(self.blocks)
+        del remaining[block_id]
+        return ExpressionGraph(
+            work_id=self.work_id,
+            tenant_id=self.tenant_id,
+            editorial_id=self.editorial_id,
+            blocks=remaining,
+        )
+
+    def move_block(
+        self,
+        block_id: str,
+        *,
+        parent_id: Optional[str],
+        position: int,
+    ) -> "ExpressionGraph":
+        block = self.get_block(block_id)
+        if block is None:
+            raise MissingParentNodeError(f"El bloque '{block_id}' no existe en el grafo de expresión.")
+        if position < 0:
+            raise ValueError("La posición del bloque no puede ser negativa.")
+        if parent_id == block_id:
+            raise GraphCycleError(f"El bloque '{block_id}' no puede ser su propio padre.")
+        if parent_id is not None and parent_id not in self.blocks:
+            raise MissingParentNodeError(f"El bloque padre '{parent_id}' no existe en el grafo de expresión.")
+
+        current_parent_id = parent_id
+        visited = set()
+        while current_parent_id is not None:
+            if current_parent_id == block_id:
+                raise GraphCycleError(
+                    f"Mover '{block_id}' bajo '{parent_id}' produciría un ciclo."
+                )
+            if current_parent_id in visited:
+                raise GraphCycleError("El grafo de expresión ya contiene un ciclo parental.")
+            visited.add(current_parent_id)
+            current_parent = self.get_block(current_parent_id)
+            current_parent_id = current_parent.parent_id if current_parent else None
+
+        moved_block = block.model_copy(
+            update={"parent_id": parent_id, "position": position}
+        )
+        return self.edit_block(moved_block)
 
     def get_block(self, block_id: str) -> Optional[ContentBlock]: return self.blocks.get(block_id)
     def has_block(self, block_id: str) -> bool: return block_id in self.blocks
