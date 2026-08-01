@@ -23,11 +23,28 @@ Este directorio contiene la documentación autoritativa del producto y su arquit
    - relación entre producción literaria y visual;
    - visual briefs, composición determinística, sincronización y EditionCompiler.
 
-5. `architecture/EDITORIAL_TRES_ENGINEERING_STATE.md`
+5. `architecture/APP_BOOK_FORMAT_CONTRACT.md`
+   - contrato versionado entre Studio y Reader;
+   - contenido estructurado de una edición App Book;
+   - compatibilidad, validación y límites de exposición.
+
+6. `architecture/EDITORIAL_TRES_COMMERCIAL_PLATFORM_VISION.md`
+   - TR.ES Studio, App Book Format y App Book Reader;
+   - servicios editoriales comercializables;
+   - fronteras entre núcleo editorial, comercio, lectura y analítica;
+   - fases comerciales.
+
+7. `architecture/EDITORIAL_TRES_ENGINEERING_STATE.md`
    - estado real y verificado del repositorio;
    - capacidades implementadas;
    - capacidades pendientes;
    - próximo corte recomendado.
+
+8. `architecture/EDITORIAL_TRES_ENTERPRISE_ROADMAP.md`
+   - secuencia canónica de cortes de ingeniería;
+   - criterios de cierre y prerrequisitos;
+   - decisiones explícitamente postergadas;
+   - control antideriva antes de modificar runtime.
 
 ## Documentos complementarios
 
@@ -35,6 +52,11 @@ Este directorio contiene la documentación autoritativa del producto y su arquit
 - `architecture/neoliterary-kernel.md`: documento histórico del primer corte del kernel; no usar sus exclusiones como estado actual.
 - `product/product-contract.md`: contrato de producto inicial; compatible con la definición canónica, pero menos completo.
 - `decisions/`: ADRs y decisiones arquitectónicas numeradas.
+  - ADR-004: composición editorial ejecutable por fases;
+  - ADR-005: operaciones editoriales tipadas dentro de `Patch`;
+  - ADR-006: autoridad única para relaciones semánticas entre grafos;
+  - ADR-007: extensibilidad gobernada del vocabulario editorial;
+  - ADR-008: evolución segura del event stream y observabilidad separada.
 
 ## Regla de autoridad
 

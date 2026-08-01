@@ -1,10 +1,27 @@
 id: output.manuscript
-version: 0.1.0
+version: 0.2.0
 type: output
 name: Salida manuscrito
-description: Compilador de entregable manuscrito tradicional.
+description: Compilador de entregable manuscrito tradicional a partir de una edición aprobada.
 entrypoint: SKILL.md
-language:
-  - es
+language: [es]
 compatible_with: []
 requires: []
+inputs: [approved_work_projection]
+outputs: [manuscript_artifact]
+rules: [compile_without_creative_rewrite, preserve_source_traceability]
+capabilities: [ordered_text_projection, manuscript_export]
+deterministic: true
+risks: [projection_drift]
+behavior:
+  format: manuscript
+  required_inputs:
+    - approved_content_blocks
+    - edition_order
+  artifacts:
+    - manuscript_document
+  validation_rules:
+    - include only approved content
+    - preserve canonical ordering
+    - preserve citations and references required by the edition
+  preserves_canonical_work: true

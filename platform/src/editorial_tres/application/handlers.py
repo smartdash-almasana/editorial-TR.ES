@@ -3,10 +3,11 @@ import hashlib, json, uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterable
-from editorial_tres.application.commands import AddContentBlockCommand, ApplyApprovedPatchCommand, CreateWorkCommand, EditContentBlockCommand, RegisterDependencyCommand, CreateBranchCommand
+from editorial_tres.application.commands import AddContentBlockCommand, ApplyApprovedPatchCommand, CreateWorkCommand, EditContentBlockCommand, RegisterDependencyCommand, CreateBranchCommand, RecordReviewFindingCommand, DecideReviewFindingCommand
 from editorial_tres.application.projections import CurrentWorkProjection
 from editorial_tres.domain.commits import EditorialCommit
-from editorial_tres.domain.events import create_content_block_added_event, create_content_block_edited_event, create_dependency_registered_event, create_derived_resource_invalidated_event, create_work_created_event
+from editorial_tres.domain.events import create_content_block_added_event, create_content_block_edited_event, create_dependency_registered_event, create_derived_resource_invalidated_event, create_review_finding_decided_event, create_review_finding_recorded_event, create_work_created_event
+from editorial_tres.domain.review_history import ReviewHistory
 from editorial_tres.domain.work import Work
 from editorial_tres.exceptions import ConcurrencyError, WorkAlreadyExistsError, BranchAlreadyExistsError, BranchNotFoundError
 @dataclass(frozen=True)
@@ -180,3 +181,101 @@ class ApplyApprovedPatchHandler(_Handler):
             commit_events,
             f"patch.applied: {command.patch.patch_id}",
         )
+
+
+_MANUSCRIPT_MUTATION_EVENTS = {"content_block.added", "content_block.edited"}
+
+
+class RecordReviewFindingHandler(_Handler):
+    """Persist one diagnostic finding without changing manuscript content."""
+
+    def handle(self, command: RecordReviewFindingCommand):
+        existing = self._idempotent(command)
+        if existing:
+            return _result(existing)
+
+        events = self._event_store.get_events(
+            command.tenant_id,
+            command.editorial_id,
+            command.work_id,
+            command.branch,
+        )
+        work = Work.replay(events)
+        if command.expected_version != work.version:
+            raise ConcurrencyError(
+                f"Se esperaba versión {work.version}, se recibió {command.expected_version}."
+            )
+
+        history = ReviewHistory.replay(events)
+        if history.get_finding(command.finding.finding_id) is not None:
+            raise ValueError(f"El finding '{command.finding.finding_id}' ya está registrado.")
+
+        event = create_review_finding_recorded_event(
+            event_id=f"evt-{uuid.uuid4().hex[:16]}",
+            tenant_id=command.tenant_id,
+            editorial_id=command.editorial_id,
+            work_id=command.work_id,
+            aggregate_version=work.version + 1,
+            actor_id=command.actor_id,
+            occurred_at=datetime.now(timezone.utc),
+            finding=command.finding.model_dump(mode="json"),
+        )
+        return self._persist(command, (event,), f"review.finding_recorded: {command.finding.finding_id}")
+
+
+class DecideReviewFindingHandler(_Handler):
+    """Persist one explicit decision over an existing, non-stale finding."""
+
+    def handle(self, command: DecideReviewFindingCommand):
+        existing = self._idempotent(command)
+        if existing:
+            return _result(existing)
+
+        events = self._event_store.get_events(
+            command.tenant_id,
+            command.editorial_id,
+            command.work_id,
+            command.branch,
+        )
+        work = Work.replay(events)
+        if command.expected_version != work.version:
+            raise ConcurrencyError(
+                f"Se esperaba versión {work.version}, se recibió {command.expected_version}."
+            )
+
+        history = ReviewHistory.replay(events)
+        finding = history.get_finding(command.decision.finding_id)
+        if finding is None:
+            raise ValueError(
+                f"El finding '{command.decision.finding_id}' no existe en el historial de revisión."
+            )
+        if history.get_decision(finding.finding_id) is not None:
+            raise ValueError(f"El finding '{finding.finding_id}' ya fue decidido.")
+        if command.decision.source_version != finding.source_version:
+            raise ValueError("La decisión no corresponde a la versión fuente del finding.")
+
+        for event in events:
+            if (
+                event.aggregate_version > finding.source_version
+                and event.event_type in _MANUSCRIPT_MUTATION_EVENTS
+            ):
+                raise ConcurrencyError(
+                    f"El finding '{finding.finding_id}' quedó stale por una mutación posterior del manuscrito."
+                )
+
+        event = create_review_finding_decided_event(
+            event_id=f"evt-{uuid.uuid4().hex[:16]}",
+            tenant_id=command.tenant_id,
+            editorial_id=command.editorial_id,
+            work_id=command.work_id,
+            aggregate_version=work.version + 1,
+            actor_id=command.actor_id,
+            occurred_at=command.decision.decided_at or datetime.now(timezone.utc),
+            decision=command.decision.model_dump(mode="json"),
+        )
+        return self._persist(command, (event,), f"review.finding_decided: {finding.finding_id}")
+
+
+def get_review_history(event_store, tenant_id, editorial_id, work_id, branch: str = "main") -> ReviewHistory:
+    """Return the current review history derived from the canonical event stream."""
+    return ReviewHistory.replay(event_store.get_events(tenant_id, editorial_id, work_id, branch))

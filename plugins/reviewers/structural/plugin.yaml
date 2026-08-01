@@ -2,9 +2,34 @@ id: reviewer.structural
 version: 0.1.0
 type: reviewer
 name: Revisor estructural
-description: Reglas de coherencia y arquitectura argumental.
+description: Detecta duplicación de párrafos y reiteraciones temáticas configuradas sin modificar la obra.
 entrypoint: SKILL.md
 language:
   - es
 compatible_with: []
 requires: []
+inputs:
+  - manuscript_state
+outputs:
+  - review_findings
+rules:
+  - reviewer_never_mutates_work
+  - findings_must_reference_source_version
+capabilities:
+  - duplicate_paragraph_detection
+  - configured_thematic_reiteration_detection
+deterministic: true
+risks:
+  - false_positive_on_deliberate_repetition
+behavior:
+  finding_type: structure.integrity
+  scope:
+    - expression_block
+  severity: warning
+  evidence_format: exact_paragraph_or_configured_phrase
+  nature: deterministic
+  recommendation_policy: revisar si la repetición cumple una función estructural deliberada
+  implementation: structural
+  parameters:
+    thematic_phrases: []
+    minimum_thematic_occurrences: 3

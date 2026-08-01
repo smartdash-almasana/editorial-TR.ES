@@ -1,0 +1,36 @@
+id: research.documentary
+version: 0.1.0
+type: research_method
+name: Investigación documental
+description: Método trazable para descubrir, jerarquizar, contrastar y citar fuentes documentales.
+entrypoint: SKILL.md
+language: [es]
+compatible_with: []
+requires: []
+inputs: [research_question, source_candidates]
+outputs: [validated_sources, evidence_fragments, citation_map]
+rules: [trace_sources, distinguish_fact_from_inference]
+capabilities: [source_discovery, evidence_ranking, contradiction_detection, citation_traceability]
+deterministic: false
+risks: [source_bias, false_authority, citation_drift]
+behavior:
+  source_discovery:
+    - buscar fuentes primarias antes de depender de resúmenes cuando estén disponibles
+    - ampliar búsqueda sólo cuando mejore cobertura o contraste
+  evidence_hierarchy:
+    - priorizar fuente primaria verificable
+    - distinguir evidencia directa de interpretación secundaria
+  credibility_checks:
+    - verificar autoría procedencia fecha y contexto
+    - detectar dependencia circular entre fuentes
+  extraction_rules:
+    - conservar fragmento y localización junto al claim respaldado
+    - no separar una cita de su contexto relevante
+  contradiction_handling:
+    - registrar contradicciones sin resolverlas por omisión
+    - exigir contraste explícito cuando dos fuentes sostienen afirmaciones incompatibles
+  citation_policy:
+    - toda cita debe apuntar a una fuente identificable
+    - no fabricar referencias faltantes
+  update_policy:
+    - marcar como pendiente de revisión evidencia dependiente de una fuente actualizada

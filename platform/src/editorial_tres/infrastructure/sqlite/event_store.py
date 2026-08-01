@@ -12,6 +12,8 @@ from editorial_tres.domain.events import (
     DependencyRegistered,
     DerivedResourceInvalidated,
     DomainEvent,
+    ReviewFindingDecided,
+    ReviewFindingRecorded,
 )
 from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
 from editorial_tres.exceptions import (
@@ -28,6 +30,8 @@ _EVENT_MODELS = {
     "content_block.edited": ContentBlockEdited,
     "dependency.registered": DependencyRegistered,
     "derived_resource.invalidated": DerivedResourceInvalidated,
+    "review.finding_recorded": ReviewFindingRecorded,
+    "review.finding_decided": ReviewFindingDecided,
 }
 
 

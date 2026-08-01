@@ -215,10 +215,23 @@ Posibles outputs:
 - AppBookEdition;
 - audio y derivados futuros.
 
-## Frontera con TRES.APP
+## Frontera con App Book Format y TRES.APP
 
-Editorial TR.ES produce `AppBookEdition` como paquete estructurado.
+Las dos factorías convergen en `EditionCompiler`, que proyecta una edición aprobada hacia salidas concretas.
 
-TRES.APP consume esa edición y ofrece la experiencia interactiva de lectura.
+Para App Book, el resultado no debe ser una pantalla ni una estructura privada de Studio, sino un paquete que cumpla `App Book Format`:
 
-Funciones del lector como tooltips de citas, swipe de ilustraciones, temas de lectura, audio, actividades, guardados y progreso pertenecen a TRES.APP, no al kernel de producción.
+```text
+WorkGraph
+→ factorías literaria + visual
+→ EditionProjector / EditionCompiler
+→ AppBookPackage
+→ App Book Format
+→ TRES.APP / App Book Reader
+```
+
+El formato transporta estructura editorial, bloques, citas, fuentes, bibliografía, visuales, audio, actividades, artefactos y metadatos de consumo necesarios, sin exponer el historial interno de producción.
+
+TRES.APP consume esa edición y ofrece la experiencia interactiva de lectura. Funciones como tooltips de citas, swipe de ilustraciones, temas de lectura, audio, actividades, guardados, biblioteca, offline y progreso pertenecen al Reader, no al kernel de producción.
+
+La especificación arquitectónica del contrato está en `APP_BOOK_FORMAT_CONTRACT.md`.

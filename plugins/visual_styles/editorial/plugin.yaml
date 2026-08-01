@@ -1,0 +1,36 @@
+id: visual_style.editorial
+version: 0.1.0
+type: visual_style
+name: Estilo visual editorial
+description: Tratamiento visual sobrio y coherente para activos editoriales sin decidir su contenido semántico.
+entrypoint: SKILL.md
+language: [es]
+compatible_with: []
+requires: []
+inputs: [visual_asset_spec, editorial_identity]
+outputs: [styled_visual_spec]
+rules: [do_not_change_semantic_subject, preserve_series_consistency]
+capabilities: [palette_control, composition_control, series_consistency]
+deterministic: false
+risks: [style_over_semantics, visual_homogenization]
+behavior:
+  palette:
+    - paleta subordinada a identidad editorial y obra
+  textures:
+    - textura sólo cuando cumple función expresiva
+  lighting:
+    - iluminación coherente con intención y legibilidad
+  iconography:
+    - iconografía consistente en toda la serie
+  shape_language:
+    - lenguaje formal reconocible sin saturación
+  composition:
+    - jerarquía visual clara
+    - equilibrio entre respiración y densidad informativa
+  character_treatment:
+    - conservar identidad visual de personajes recurrentes
+  series_consistency:
+    - mantener reglas compartidas entre activos relacionados
+  prohibitions:
+    - no introducir texto generativo como tipografía final
+    - no cambiar el significado del brief para favorecer estética

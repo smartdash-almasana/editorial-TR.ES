@@ -181,7 +181,7 @@ Agrupa eventos coherentes en una unidad versionada sobre una rama.
 
 ## Memorias separadas
 
-La arquitectura distingue cuatro ámbitos:
+La arquitectura distingue cuatro ámbitos canónicos:
 
 1. **Editorial**: constitución, políticas, reglas, terminología, identidad visual y criterios de aprobación.
 2. **Autor**: corpus, voz aprobada, patrones, antipatrones y decisiones confirmadas.
@@ -189,6 +189,38 @@ La arquitectura distingue cuatro ámbitos:
 4. **Pasada/sesión**: contexto mínimo requerido para una operación puntual.
 
 No deben mezclarse. Más contexto no equivale a mejor calidad.
+
+### Fronteras de SemanticMemory
+
+La arquitectura distingue explícitamente:
+
+```text
+estado canónico ≠ memoria ≠ recuperación ≠ contexto de ejecución
+```
+
+- **Estado canónico**: autoridad de dominio. En la obra, esa autoridad reside en `Work`/`WorkGraph`, eventos, commits y objetos versionados. En editorial y autor, reside en sus fuentes aprobadas y versionadas.
+- **SemanticMemory**: organización semántica de conocimiento ya autorizado. No crea una segunda verdad ni sustituye al estado canónico.
+- **MemoryRetriever**: mecanismo de recuperación. Puede combinar relaciones de grafo, búsqueda exacta, metadatos, búsqueda léxica, embeddings u otros índices.
+- **ContextBuilder**: selecciona el mínimo contexto útil para una operación concreta.
+- **PassMemory**: contexto efímero resultante para una pasada o sesión; no es una memoria acumulativa ni autoridad persistente.
+
+Los embeddings y vectores son índices auxiliares de recuperación. Nunca son fuente de verdad ni sustituyen relaciones explícitas cuando el dominio puede representarlas de forma estructurada.
+
+### Función creativa de cada ámbito
+
+**EditorialMemory** debe operar principalmente como marco, restricción y criterio institucional. No debe homogeneizar la prosa de autores distintos ni convertirse en una voz estilística global.
+
+**AuthorMemory** preserva identidad autoral sin reducirla a imitación superficial. Debe poder distinguir, dentro del mismo ámbito, entre invariantes de voz, patrones frecuentes, recursos ocasionales, antipatrones, evolución, excepciones deliberadas y ejemplos aprobados o rechazados.
+
+**WorkMemory** no duplica `WorkGraph`. Es una proyección y capa de acceso sobre la identidad emergente de la obra: estructura, conceptos, motivos, tensiones, preguntas abiertas, promesas narrativas, símbolos, continuidad, conocimiento distribuido entre personajes o actores, decisiones editoriales y relaciones internas.
+
+**PassMemory** debe ser mínima, específica y descartable. Una pasada recibe sólo el contexto necesario para su propósito; no se carga la totalidad de la obra por defecto.
+
+### Principio de creatividad
+
+La memoria preserva identidad, continuidad y profundidad, pero no determina la siguiente expresión.
+
+El sistema debe evitar que la memoria se convierta en un mecanismo de repetición estadística. La calidad literaria exige conservar espacio para sorpresa, desviación deliberada, ambigüedad, descubrimiento y ruptura controlada de patrones.
 
 ## Reglas determinísticas y juicios probabilísticos
 

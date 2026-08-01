@@ -1,10 +1,56 @@
 id: style.literary
-version: 0.1.0
+version: 0.2.0
 type: style
 name: Estilo literario
-description: Normas estilísticas para prosa cuidada.
+description: Modulación estilística para prosa cuidada sin sustituir la voz autoral.
 entrypoint: SKILL.md
 language:
   - es
 compatible_with: []
 requires: []
+inputs:
+  - manuscript_state
+  - author_voice_context
+outputs:
+  - style_guidance
+rules:
+  - preserve_author_identity
+  - prefer_precision_over_ornament
+  - avoid_formulaic_ai_prose
+reviewers:
+  - reviewer.style_drift
+passes:
+  - pass.style_refinement
+capabilities:
+  - rhythm_modulation
+  - lexical_precision
+  - rhetorical_control
+deterministic: false
+risks:
+  - overstyling
+  - voice_erasure
+behavior:
+  principles:
+    - preservar la identidad autoral
+    - mejorar precisión y fuerza expresiva sin homogeneizar la prosa
+    - permitir variación deliberada cuando la obra lo exige
+  rhythm:
+    - alternar longitud y cadencia según función narrativa
+    - evitar monotonía sintáctica sostenida
+  sentence_profile:
+    - priorizar frases con función clara
+    - conservar variación de longitud significativa
+  lexical_preferences:
+    - preferir vocabulario preciso antes que ornamentación genérica
+    - elegir palabras concretas cuando aumenten potencia expresiva
+  rhetorical_devices:
+    - usar metáfora cuando añada significado y no como decoración automática
+    - conservar ambigüedad deliberada cuando tenga función literaria
+  avoid:
+    - clichés de prosa generativa
+    - intensificadores vacíos
+    - explicaciones redundantes de lo ya sugerido
+  positive_examples:
+    - precisión, ritmo y variación subordinados a la intención de la obra
+  negative_examples:
+    - prosa uniformemente pulida que borra irregularidades expresivas valiosas

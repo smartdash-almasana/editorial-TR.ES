@@ -17,6 +17,7 @@ id: sample_proj
 title: Proyecto Test
 language: es-AR
 plugins:
+  editorial: editorial.tres
   genre: genre.essay
   styles:
     - style.literary
@@ -27,8 +28,10 @@ plugins:
     manifest = ProjectManifest.from_yaml(proj_yaml)
     assert manifest.id == "sample_proj"
     assert manifest.title == "Proyecto Test"
+    assert manifest.plugins.editorial == "editorial.tres"
     assert manifest.plugins.genre == "genre.essay"
     assert manifest.plugins.styles == ["style.literary"]
+    assert "editorial.tres" in manifest.plugins.get_all_plugin_ids()
     assert "genre.essay" in manifest.plugins.get_all_plugin_ids()
     assert "style.literary" in manifest.plugins.get_all_plugin_ids()
 

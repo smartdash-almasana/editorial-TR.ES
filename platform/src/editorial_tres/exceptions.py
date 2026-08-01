@@ -142,3 +142,27 @@ class InvalidBranchError(EditorialTresError):
     """Lanzada cuando un nombre de rama es inválido o vacío."""
 
     pass
+
+
+class UnknownImplementationError(EditorialTresError):
+    """Lanzada cuando un implementation_id no está registrado en CapabilityFactoryRegistry."""
+
+    pass
+
+
+class RegistryFrozenError(EditorialTresError):
+    """Lanzada al intentar modificar un CapabilityFactoryRegistry congelado."""
+
+    pass
+
+
+class RequiredReviewerNotFoundError(PluginNotFoundError):
+    """Lanzada cuando una composición runtime exige un reviewer ausente del catálogo."""
+
+    pass
+
+
+class InvalidReviewPlanError(EditorialTresError):
+    """Lanzada cuando una composición activada no puede producir un ReviewPlan coherente."""
+
+    pass

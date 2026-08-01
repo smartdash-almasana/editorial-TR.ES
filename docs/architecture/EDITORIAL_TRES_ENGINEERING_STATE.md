@@ -4,7 +4,7 @@
 
 Documento operativo. Debe reflejar únicamente capacidades verificadas en el repositorio.
 
-Fecha de corte: 2026-07-30.
+Fecha de corte: 2026-07-31.
 
 ## Regla de lectura
 
@@ -95,28 +95,52 @@ Propiedades verificadas:
 
 ## Suite conocida
 
-Última ejecución completa posterior al corte de aplicación de Patch:
+Última revalidación completa recibida después de implementar `ReviewPlanComposer` y `ReviewPlan`:
 
 ```text
-136 passed in 2.30s
+10 passed in 3.42s  — focales de ReviewPlanComposer y ReviewPlan
+87 passed in 4.23s  — regresión vecina de composición, runtime y reviewers
+232 passed in 5.74s — suite completa
 ```
 
-Esto es evidencia del estado observado en este corte, no una garantía permanente. Debe actualizarse cuando cambie el código.
+Los tres comandos finalizaron con exit code `0` y sin tracebacks. `git diff --check` no reportó errores de formato ni marcadores de conflicto en los paths del corte. Las advertencias LF→CRLF son informativas y no constituyen fallo de validación.
 
-## Plugins
+La revalidación cubre también `ActivatedProjectComposition`, `CapabilityFactoryRegistry`, `PluginRuntime`, `ReviewEngine` y los pilotos literarios vecinos.
+
+## Plugins y composición ejecutable
 
 Verificado en el repo:
 
 - manifiestos;
-- registro/descubrimiento;
-- resolución de dependencias;
-- compatibilidad;
-- orden determinista de composición;
-- categorías existentes de género, voz, narrador, estilo, reviewer, visual, output y workflow en la composición.
+- registro y descubrimiento mediante `PluginRegistry`;
+- resolución estática de dependencias y compatibilidad;
+- orden determinista de `ProjectComposition`;
+- activación y validación tipada de behaviors mediante `PluginRuntime`;
+- construcción de reviewers mediante `CapabilityFactoryRegistry`;
+- registry canónico congelado y registries nuevos extensibles;
+- `ActivatedProjectComposition` como fase runtime separada de `compose_project()`;
+- activación de plugins en `composition_order`;
+- descubrimiento explícito de reviewers requeridos por proyecto, género y workflow;
+- deduplicación determinista de requirements;
+- fallos tempranos ante reviewer inexistente, behavior inválido, implementación desconocida o factory incapaz de construir;
+- materialización de los tres reviewers exigidos por `genre.novel`.
 
-No debe afirmarse todavía que existe un `PluginRuntime` capaz de ejecutar plenamente capacidades editoriales. La composición de manifiestos no equivale a ejecución del comportamiento del plugin.
+Frontera demostrada:
 
-## Capacidades canónicas todavía no demostradas como runtime completo
+```text
+ProjectManifest + PluginManifest[]
+→ ProjectComposition
+→ ActivatedProjectComposition
+→ ReviewPlanComposer
+→ ReviewPlan
+→ ReviewEngine construido, no ejecutado
+```
+
+La fase de activación no recibe `Work`, no crea `ReviewPlan`, no construye `ReviewEngine` y no ejecuta reviewers. El runtime usado durante la activación es local a la operación, por lo que un fallo no deja un `PluginRuntime` externo parcialmente mutado.
+
+La composición automática del plan y la construcción del `ReviewEngine` están demostradas. No debe afirmarse todavía que el plan se ejecute automáticamente sobre `Work` desde manifiestos ni que exista un workflow executor integral.
+
+## Estado de capacidades canónicas de runtime
 
 ### ReviewFinding / ReviewEngine
 
@@ -143,15 +167,43 @@ Propiedades verificadas:
 - `ReviewEngine` rechaza `reviewer_id` duplicados;
 - el engine agrega hallazgos sin crear ni aplicar patches.
 
-Todavía pendiente:
+Puente diagnóstico → decisión → transformación implementado y probado:
 
 ```text
-findings aceptados
-→ EditorialPass transformadora
+ReviewFinding
+→ FindingDecision
+→ FindingDrivenBlockEditPass
 → Patch
 ```
 
-También siguen pendientes arbitraje, reviewers probabilísticos, persistencia de findings y aceptación/rechazo de findings como flujo de aplicación.
+`FindingDecision` conserva el scope y la versión del finding, admite estados `accepted`, `rejected` y `escalated`, y no modifica `Work`. Sólo un finding aceptado y aún vigente puede alimentar una pasada transformadora. La pasada genera un `Patch`; no aplica el cambio ni omite `ApprovalGate`.
+
+Persistencia de revisión implementada y probada sobre el stream canónico de la obra:
+
+```text
+ReviewEngine
+→ ReviewFinding persistido
+→ FindingDecision persistida
+→ replay / consulta de ReviewHistory
+→ FindingDrivenBlockEditPass
+→ Patch
+```
+
+Componentes actuales:
+
+- eventos `review.finding_recorded` y `review.finding_decided`;
+- `RecordReviewFindingCommand` / `RecordReviewFindingHandler`;
+- `DecideReviewFindingCommand` / `DecideReviewFindingHandler`;
+- `ReviewHistory` como read model inmutable reconstruible por replay;
+- wiring en `compose_application()` con SQLite;
+- consulta `EditorialApplication.review_history(...)`;
+- idempotencia de registro y decisión;
+- rechazo de decisiones sobre findings inexistentes, ya decididos o stale;
+- persistencia y replay verificados después de reiniciar SQLite.
+
+Los eventos de revisión avanzan la versión del stream, pero no mutan el manuscrito. Un finding no queda stale por el mero hecho de ser persistido: la obsolescencia se determina por mutaciones reales del manuscrito posteriores a la versión fuente del diagnóstico.
+
+Siguen pendientes arbitraje entre findings y reviewers probabilísticos.
 
 ### ManuscriptState completo
 
@@ -159,11 +211,32 @@ Pendiente como objeto runtime integral.
 
 El estado de obra existe distribuido entre agregado, grafos, eventos, commits, dependencias y proyección, pero no se debe afirmar que el `ManuscriptState` canónico completo ya esté materializado.
 
-### PluginRuntime real
+### ReviewPlan / ReviewPlanComposer
 
-Pendiente.
+Implementado, probado y cerrado.
 
-Debe ejecutar capacidades enchufables sin permitir que violen invariantes del kernel.
+Componentes agregados:
+
+- `application/review_plan.py`;
+- `ReviewRequirementOrigin`;
+- `ReviewPlanEntry`;
+- `ReviewPlan`;
+- `ReviewPlanComposer`;
+- `InvalidReviewPlanError`;
+- vista pública `ReviewEngine.reviewer_ids` para verificar el orden sin exponer instancias internas.
+
+Responsabilidades implementadas:
+
+- reconciliación determinista de reviewers explícitos del proyecto, requeridos por género y requeridos por workflow;
+- deduplicación por reviewer conservando todos sus orígenes;
+- procedencia, razón de inclusión, orden, implementation ID y naturaleza trazables;
+- snapshot JSON canónico del behavior declarativo, incluidos scope, severidad, políticas y parámetros;
+- construcción de reviewers mediante `CapabilityFactoryRegistry`;
+- construcción de `ReviewEngine` desde el plan sin wiring manual;
+- rechazo de divergencias entre los requirements activados y los reconciliados;
+- rechazo de planes vacíos o de reviewers requeridos ausentes de la vista activada.
+
+La composición del plan no recibe `Work`, no ejecuta reviewers, no produce findings y no crea ni aplica patches. La capacidad quedó verificada con 10 focales, 87 pruebas vecinas, 232 pruebas completas y `git diff --check` exitoso.
 
 ### SemanticMemory
 
@@ -224,28 +297,30 @@ Por lo tanto:
 
 ## Próximo corte recomendado
 
-Implementar únicamente el puente editorial entre diagnóstico y transformación:
+ADR-004 queda cerrado de extremo a extremo hasta esta frontera verificada:
 
 ```text
-ReviewFinding aceptado
-→ EditorialPass transformadora
-→ Patch
+ProjectComposition
+→ ActivatedProjectComposition
+→ ReviewPlanComposer
+→ ReviewPlan
+→ ReviewEngine construido, no ejecutado
 ```
 
-Condiciones:
+El siguiente corte canónico del roadmap es **Corte 2 — Operaciones estructurales mínimas de Patch**. No se abre como parte de este cierre.
 
-- aceptar/rechazar findings de forma explícita y trazable;
-- ningún finding modifica `Work`;
-- ningún finding aceptado aplica un cambio por sí mismo;
-- la pasada transformadora debe consumir únicamente findings aceptados;
-- el resultado sigue siendo un `Patch` sujeto a `ApprovalGate` antes de aplicarse;
-- tests focales;
-- suite completa;
-- no abrir todavía factoría visual, scheduler, UI, API ni TRES.APP.
+No abrir todavía workflow executor general, providers, jueces probabilísticos, factoría visual, scheduler, UI, API ni TRES.APP.
 
 ## Frontera de producto
 
-- `Editorial TR.ES`: produce, revisa, versiona y compila obras.
-- `TRES.APP`: consume una edición app-book y ofrece la experiencia de lectura.
+La arquitectura comercial vigente distingue:
 
-No mezclar responsabilidades de lector interactivo dentro del kernel creativo.
+- `TR.ES Studio`: producto SaaS para autores/editores/sellos, construido sobre la fábrica editorial;
+- `App Book Format`: contrato versionado entre producción y consumo;
+- `TRES.APP / App Book Reader`: runtime de lectura, biblioteca y experiencia del lector.
+
+Los dominios de comercio, acceso, ventas, regalías, suscripciones y créditos son conceptualmente separados del `WorkGraph`, aunque sus experiencias puedan integrarse en Studio o Reader.
+
+Esta definición es arquitectura de producto. No implica que Studio SaaS, App Book Format completo, marketplace, billing o Reader estén implementados en este repositorio.
+
+No mezclar responsabilidades de lector interactivo ni lógica comercial dentro del kernel creativo.

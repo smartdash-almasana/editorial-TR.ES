@@ -1,0 +1,35 @@
+id: workflow.standard
+version: 0.1.0
+type: workflow
+name: Workflow editorial estándar
+description: Secuencia gobernada desde diagnóstico hasta aprobación y compilación.
+entrypoint: SKILL.md
+language: [es]
+compatible_with: []
+requires: []
+inputs: [manuscript_state, active_plugins]
+outputs: [approved_edition_ready]
+rules: [review_before_transform, require_patch_for_mutation, require_approval_before_apply]
+capabilities: [review_flow, approval_flow, compilation_readiness]
+deterministic: true
+risks: [premature_completion]
+behavior:
+  stages:
+    - diagnose
+    - decide_findings
+    - propose_patches
+    - approve_patches
+    - apply_changes
+    - validate_edition
+  required_reviewers: []
+  gates:
+    - approval_gate_before_mutation
+    - edition_validation_before_compile
+  retry_policy:
+    - retry only the failed or invalidated stage
+  human_escalation:
+    - escalate ambiguous sensitive editorial decisions
+  completion_criteria:
+    - no unresolved blocking findings
+    - all applied changes traceable to approved patches
+    - edition inputs valid for selected output

@@ -4,7 +4,7 @@ Contrato y validación del manifiesto de plugins (plugin.yaml).
 
 from pathlib import Path
 import re
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
@@ -15,12 +15,16 @@ from editorial_tres.exceptions import (
 )
 
 ALLOWED_PLUGIN_TYPES = {
+    "editorial",
     "genre",
     "voice",
     "narrator",
     "style",
     "reviewer",
+    "research_method",
     "visual",
+    "visual_type",
+    "visual_style",
     "workflow",
     "output",
 }
@@ -54,6 +58,19 @@ class PluginManifest(BaseModel):
     language: List[str] = Field(default_factory=lambda: ["es"])
     compatible_with: List[str] = Field(default_factory=list)
     requires: List[str] = Field(default_factory=list)
+    inputs: List[str] = Field(default_factory=list)
+    outputs: List[str] = Field(default_factory=list)
+    rules: List[str] = Field(default_factory=list)
+    schemas: List[str] = Field(default_factory=list)
+    prompts: List[str] = Field(default_factory=list)
+    reviewers: List[str] = Field(default_factory=list)
+    passes: List[str] = Field(default_factory=list)
+    tools: List[str] = Field(default_factory=list)
+    models: List[str] = Field(default_factory=list)
+    capabilities: List[str] = Field(default_factory=list)
+    deterministic: Optional[bool] = None
+    risks: List[str] = Field(default_factory=list)
+    behavior: Dict[str, Any] = Field(default_factory=dict)
     manifest_path: Optional[Path] = None
 
     def __init__(self, **data):

@@ -1,5 +1,7 @@
 # Contrato de producto — Editorial TR.ES
 
+> **Estado:** contrato inicial de alcance. Conserva decisiones válidas del primer corte, pero la visión comercial vigente se amplió posteriormente. Para arquitectura de producto actual usar `docs/architecture/EDITORIAL_TRES_PRODUCT_DEFINITION.md` y `docs/architecture/EDITORIAL_TRES_COMMERCIAL_PLATFORM_VISION.md`.
+
 ## Definición
 
 Editorial TR.ES es una plataforma privada de creación literaria y visual, diseñada para concebir obras originales y convertirlas tanto en experiencias app-book como en formatos de lectura tradicionales.
@@ -79,23 +81,25 @@ Un plugin no será solamente un prompt. Podrá incluir:
 * fixtures;
 * tests.
 
-## Relación con TRES
+## Relación con TRES / App Book
 
-Editorial TR.ES produce, revisa y aprueba las obras.
+En este contrato inicial se definió que Editorial TR.ES produce, revisa y aprueba las obras, mientras TRES recibe paquetes de publicación aprobados.
 
-TRES recibe paquetes de publicación aprobados y permite:
+La arquitectura vigente refinó esa frontera en tres componentes:
 
-* catalogarlos;
-* distribuirlos;
-* leerlos como app-book;
-* visualizar recursos;
-* descargar formatos tradicionales.
+```text
+TR.ES Studio
+→ App Book Format
+→ TRES.APP / App Book Reader
+```
 
-La fórmula editorial privada no debe formar parte del repositorio TRES.
+Catálogo, comercio, distribución, derechos de acceso y marketplace se consideran dominios comerciales separados del kernel creativo, aunque puedan presentarse dentro de Studio o Reader.
 
-## Fuera de alcance actual
+La fórmula editorial privada no debe formar parte del repositorio del Reader. Éste consume únicamente ediciones aprobadas y estructuradas mediante App Book Format.
 
-Por ahora no se construyen:
+## Fuera de alcance del primer corte
+
+En el contrato inicial se decidió no construir todavía:
 
 * SaaS;
 * multi-tenant;
@@ -104,6 +108,8 @@ Por ahora no se construyen:
 * marketplace;
 * administración comercial;
 * cuentas de múltiples editoriales.
+
+Esta lista describe el **alcance de implementación de ese corte**, no una exclusión permanente del producto. La visión comercial vigente incorpora progresivamente TR.ES Studio como SaaS, créditos/servicios, publicación, comercio y marketplace, manteniendo esas capacidades fuera del kernel creativo y separadas por dominio.
 
 ## Primer resultado operativo
 

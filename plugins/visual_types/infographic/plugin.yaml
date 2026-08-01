@@ -1,0 +1,28 @@
+id: visual_type.infographic
+version: 0.1.0
+type: visual_type
+name: Infografía
+description: Gramática visual para condensar relaciones, secuencias o comparaciones verificables.
+entrypoint: SKILL.md
+language: [es]
+compatible_with: []
+requires: []
+inputs: [semantic_source, visual_brief]
+outputs: [visual_asset_spec]
+rules: [preserve_semantic_traceability, deterministic_text_composition]
+capabilities: [comparison, sequence, hierarchy, concept_map]
+deterministic: false
+risks: [semantic_oversimplification, decorative_noise]
+behavior:
+  asset_kind: infographic
+  semantic_inputs:
+    - claims
+    - concepts
+    - relationships
+    - source_fragments
+  constraints:
+    - no introducir afirmaciones ausentes de la fuente semántica
+    - separar arte generativo de tipografía y texto final
+    - mantener trazabilidad hacia bloques o claims origen
+  output_kind: structured_infographic_spec
+  deterministic_composition: true

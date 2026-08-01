@@ -1,10 +1,46 @@
 id: narrator.reflective
-version: 0.1.0
+version: 0.2.0
 type: narrator
 name: Narrador reflexivo
-description: Perspectiva narrativa analítica e introspectiva.
+description: Perspectiva narrativa analítica e introspectiva, separada de la voz autoral y del estilo.
 entrypoint: SKILL.md
 language:
   - es
 compatible_with: []
 requires: []
+inputs:
+  - manuscript_state
+  - work_context
+outputs:
+  - narrator_guidance
+rules:
+  - keep_narrator_distinct_from_author_voice
+  - respect_declared_knowledge_limits
+reviewers:
+  - reviewer.narrator_consistency
+passes:
+  - pass.narrator_alignment
+capabilities:
+  - reflective_distance
+  - controlled_interiority
+  - knowledge_scope_control
+deterministic: false
+risks:
+  - narrator_voice_confusion
+  - unauthorized_omniscience
+behavior:
+  persona: tercera persona
+  distance: media-reflexiva
+  focalization: interna variable controlada
+  reliability: estable salvo decisión explícita de la obra
+  temporality: retrospectiva con anclaje en la secuencia narrativa
+  reader_relation:
+    - acompaña la interpretación sin explicar en exceso
+    - mantiene distancia suficiente para permitir ambigüedad
+  interiority_access:
+    - accede a interioridad sólo cuando la focalización de la escena lo permite
+    - distingue pensamiento del personaje de comentario narrativo
+  knowledge_restrictions:
+    - no conoce hechos futuros no habilitados por la estructura narrativa
+    - no atribuye conocimiento a personajes que aún no lo poseen
+    - no sustituye la voz autoral por una personalidad propia dominante

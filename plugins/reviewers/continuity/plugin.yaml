@@ -1,0 +1,44 @@
+id: reviewer.continuity
+version: 0.1.0
+type: reviewer
+name: Revisor de continuidad
+description: Detecta conflictos explícitos y ordenados entre estados narrativos configurados sin inferir causalidad ni modificar la obra.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []
+inputs:
+  - manuscript_state
+outputs:
+  - review_findings
+rules:
+  - reviewer_never_mutates_work
+  - findings_must_reference_source_version
+  - only_configured_conflicts_are_reported
+capabilities:
+  - configured_continuity_conflict_detection
+deterministic: true
+risks:
+  - false_positive_on_flashback_or_deliberate_temporal_shift
+behavior:
+  finding_type: narrative.continuity_conflict
+  scope:
+    - expression_block
+  severity: warning
+  evidence_format: ordered_marker_pair
+  nature: deterministic
+  recommendation_policy: verificar transición, flashback o contradicción antes de proponer cambios
+  implementation: configured_continuity
+  parameters:
+    rules:
+      - rule_id: explicit_temporal_regression_after_nightfall
+        entity: momento del día
+        established_markers:
+          - ya había oscurecido por completo
+          - había caído la noche
+          - era de noche
+        conflicting_markers:
+          - la luz de la tarde
+          - el sol de la tarde
+          - era pleno día

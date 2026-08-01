@@ -1,0 +1,67 @@
+id: genre.novel
+version: 0.1.0
+type: genre
+name: Novela
+description: Gramática editorial para obras narrativas extensas de ficción.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []
+inputs:
+  - work.narrative_graph
+  - work.expression_graph
+outputs:
+  - genre.novel.behavior
+rules:
+  - preserve_character_continuity
+  - preserve_narrative_causality
+  - track_open_promises
+schemas:
+  - narrative.scene
+  - narrative.character
+  - narrative.arc
+prompts: []
+reviewers:
+  - reviewer.structural
+  - reviewer.continuity
+  - reviewer.rhythm
+passes:
+  - pass.scene_development
+  - pass.transition_revision
+tools: []
+models: []
+capabilities:
+  - scenes
+  - characters
+  - arcs
+  - conflict
+  - continuity
+  - dialogue
+  - rhythm
+deterministic: false
+risks:
+  - flattening_author_voice
+  - over_regularizing_narrative_structure
+behavior:
+  unit_types:
+    - part
+    - chapter
+    - scene
+  structures:
+    - linear
+    - nonlinear
+    - multi_arc
+  default_passes:
+    - pass.scene_development
+    - pass.transition_revision
+  required_reviewers:
+    - reviewer.structural
+    - reviewer.continuity
+    - reviewer.rhythm
+  metrics:
+    - scene_progression
+    - character_continuity
+    - conflict_progression
+    - narrative_rhythm
+  compilation_strategy: narrative_sequence

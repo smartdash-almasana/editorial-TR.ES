@@ -11,24 +11,32 @@ from editorial_tres.exceptions import InvalidManifestError
 
 
 class ProjectPluginsSpec(BaseModel):
+    editorial: Optional[str] = None
     genre: Optional[str] = None
     voice: Optional[str] = None
     narrator: Optional[str] = None
+    research_method: Optional[str] = None
     workflow: Optional[str] = None
     styles: List[str] = Field(default_factory=list)
     reviewers: List[str] = Field(default_factory=list)
     visuals: List[str] = Field(default_factory=list)
+    visual_types: List[str] = Field(default_factory=list)
+    visual_styles: List[str] = Field(default_factory=list)
     outputs: List[str] = Field(default_factory=list)
 
     def get_all_plugin_ids(self) -> List[str]:
         """Devuelve una lista ordenada determinista con todos los IDs de plugins solicitados."""
         ids: List[str] = []
+        if self.editorial:
+            ids.append(self.editorial)
         if self.genre:
             ids.append(self.genre)
         if self.voice:
             ids.append(self.voice)
         if self.narrator:
             ids.append(self.narrator)
+        if self.research_method:
+            ids.append(self.research_method)
         if self.workflow:
             ids.append(self.workflow)
         for s in self.styles:
@@ -38,6 +46,12 @@ class ProjectPluginsSpec(BaseModel):
             if r not in ids:
                 ids.append(r)
         for v in self.visuals:
+            if v not in ids:
+                ids.append(v)
+        for v in self.visual_types:
+            if v not in ids:
+                ids.append(v)
+        for v in self.visual_styles:
             if v not in ids:
                 ids.append(v)
         for o in self.outputs:

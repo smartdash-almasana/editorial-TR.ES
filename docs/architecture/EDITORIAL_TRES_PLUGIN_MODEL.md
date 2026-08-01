@@ -187,20 +187,33 @@ El output compila; no reescribe creativamente la obra.
 
 ## PluginRuntime
 
-El runtime de plugins debe, cuando se implemente plenamente, validar al menos:
+La implementación verificada distingue tres fases explícitas:
 
-- manifiesto;
-- versión;
-- compatibilidad;
-- dependencias;
-- permisos/capacidades;
-- inputs y outputs;
-- necesidad de modelos o herramientas;
-- determinismo;
-- riesgos;
-- aislamiento.
+```text
+compose_project()
+→ ProjectComposition estática
+→ activate_project_composition()
+→ ActivatedProjectComposition runtime
+→ ReviewPlanComposer
+→ ReviewPlan
+```
 
-La existencia de manifiestos o directorios de plugins no demuestra que el runtime esté implementado. Esa distinción debe mantenerse en la documentación de estado.
+`PluginRuntime` valida behaviors tipados por categoría y conserva plugins activados. `ActivatedProjectComposition` activa los plugins resueltos en orden, descubre explícitamente reviewers exigidos por proyecto, género y workflow, deduplica requirements y verifica su construcción mediante `CapabilityFactoryRegistry`.
+
+`ReviewPlanComposer` reconcilia esos requirements conservando orden, procedencia, razón de inclusión, implementation ID, naturaleza y una fotografía JSON canónica del behavior. El `ReviewPlan` resultante puede construir `ReviewEngine` sin wiring manual.
+
+La activación y la composición del plan no reciben `Work`, no ejecutan reviewers, no producen findings y no crean ni aplican patches.
+
+La frontera actual todavía no demuestra un runtime editorial completo. Siguen pendientes:
+
+- ejecución automática del plan sobre una obra desde manifiestos;
+- permisos y aislamiento avanzado por capability;
+- providers, modelos y herramientas externas;
+- workflow executor general.
+
+La composición hasta `ReviewEngine` construido quedó verificada con `10/87/232` tests en verde y `git diff --check` exitoso.
+
+La existencia de manifiestos o directorios de plugins, por sí sola, no demuestra capacidad ejecutable. Cada categoría debe cerrar contrato, activación, materialización y prueba focal.
 
 ## Invariantes que ningún plugin puede violar
 

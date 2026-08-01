@@ -42,6 +42,7 @@ class Work(BaseModel):
         elif event.event_type == "content_block.edited": expression_graph = expression_graph.edit_block(ContentBlock.model_validate(event.payload["block"]))
         elif event.event_type == "dependency.registered": dependency_graph = dependency_graph.register(ResourceDependency.model_validate(event.payload["dependency"]))
         elif event.event_type == "derived_resource.invalidated": dependency_graph = dependency_graph.mark_stale(event.payload["dependent_resource_id"], event.payload["source_version"])
+        elif event.event_type in {"review.finding_recorded", "review.finding_decided"}: pass
         else: raise ValueError(f"Evento no soportado: {event.event_type}")
         return Work(tenant_id=self.tenant_id, editorial_id=self.editorial_id, work_id=self.work_id, title=self.title, language=self.language, status=self.status, version=event.aggregate_version, knowledge_graph=self.knowledge_graph, narrative_graph=self.narrative_graph, expression_graph=expression_graph, dependency_graph=dependency_graph, created_at=self.created_at, updated_at=event.occurred_at)
     @classmethod

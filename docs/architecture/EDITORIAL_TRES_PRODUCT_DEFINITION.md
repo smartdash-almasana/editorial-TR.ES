@@ -134,22 +134,38 @@ Posibles salidas:
 - audio;
 - derivados visuales.
 
-## Frontera con TRES.APP
+## Arquitectura de producto: Studio + Format + Reader
 
-Editorial TR.ES **fabrica** la obra y sus ediciones.
+Editorial TR.ES se expresa comercialmente mediante dos productos públicos y un contrato central:
 
-`E:\BuenosPasos\TRES.APP` **hace leer** la edición app-book.
+```text
+Editorial TR.ES
+├── TR.ES Studio
+│   producción, revisión, diseño, conversión y publicación
+├── App Book Format
+│   contrato versionado de edición
+└── App Book Reader
+    lectura, biblioteca, descubrimiento y consumo
+```
+
+`TR.ES Studio` es el producto para autores, editores y sellos. Se monta sobre el kernel y las factorías para ofrecer diagnóstico, corrección, revisión, producción visual y sonora, compilación y publicación.
+
+`App Book Format` desacopla producción y consumo. Es el paquete estructurado, validable y versionado que representa una edición App Book aprobada.
+
+`E:\BuenosPasos\TRES.APP` es el runtime lector de App Book Reader. Hace leer la edición: navegación, tooltips, swipe visual, temas de lectura, audio, actividades, guardados, progreso, biblioteca, offline y descargas autorizadas.
 
 La frontera conceptual es:
 
 ```text
 WorkGraph
 → EditionProjector / EditionCompiler
-→ AppBookEdition
-→ TRES.APP
+→ AppBookPackage / App Book Format
+→ TRES.APP / App Book Reader
 ```
 
-TRES.APP es el runtime lector: navegación, tooltips, swipe visual, temas de lectura, audio, actividades, guardados, progreso y descargas. Esas responsabilidades no pertenecen al kernel creativo de Editorial TR.ES.
+El Reader no debe conocer prompts, skills, modelos, findings, patches, costos ni decisiones internas de producción. Recibe una edición aprobada.
+
+La arquitectura comercial completa y las fronteras entre núcleo editorial, dominio comercial, lectura y analítica se documentan en `EDITORIAL_TRES_COMMERCIAL_PLATFORM_VISION.md`. El contrato del formato se documenta en `APP_BOOK_FORMAT_CONTRACT.md`.
 
 ## Criterio rector
 

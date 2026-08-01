@@ -18,6 +18,8 @@ class ContentBlockAdded(DomainEvent): event_type: Literal["content_block.added"]
 class ContentBlockEdited(DomainEvent): event_type: Literal["content_block.edited"] = "content_block.edited"
 class DependencyRegistered(DomainEvent): event_type: Literal["dependency.registered"] = "dependency.registered"
 class DerivedResourceInvalidated(DomainEvent): event_type: Literal["derived_resource.invalidated"] = "derived_resource.invalidated"
+class ReviewFindingRecorded(DomainEvent): event_type: Literal["review.finding_recorded"] = "review.finding_recorded"
+class ReviewFindingDecided(DomainEvent): event_type: Literal["review.finding_decided"] = "review.finding_decided"
 def create_work_created_event(**kwargs: Any) -> DomainEvent:
     return DomainEvent(event_type="work.created", aggregate_version=1, payload={"title": kwargs.pop("title"), "language": kwargs.pop("language"), "status": "conceived"}, **kwargs)
 def create_content_block_added_event(*, block: Mapping[str, Any], **kwargs: Any) -> ContentBlockAdded: return ContentBlockAdded(payload={"block": dict(block)}, **kwargs)
@@ -25,3 +27,5 @@ def create_content_block_edited_event(*, block: Mapping[str, Any], **kwargs: Any
 def create_dependency_registered_event(*, dependency: Mapping[str, Any], **kwargs: Any) -> DependencyRegistered: return DependencyRegistered(payload={"dependency": dict(dependency)}, **kwargs)
 def create_derived_resource_invalidated_event(*, source_resource_id: str, dependent_resource_id: str, source_version: int, **kwargs: Any) -> DerivedResourceInvalidated: return DerivedResourceInvalidated(payload={"source_resource_id": source_resource_id, "dependent_resource_id": dependent_resource_id, "source_version": source_version}, **kwargs)
 
+def create_review_finding_recorded_event(*, finding: Mapping[str, Any], **kwargs: Any) -> ReviewFindingRecorded: return ReviewFindingRecorded(payload={"finding": dict(finding)}, **kwargs)
+def create_review_finding_decided_event(*, decision: Mapping[str, Any], **kwargs: Any) -> ReviewFindingDecided: return ReviewFindingDecided(payload={"decision": dict(decision)}, **kwargs)

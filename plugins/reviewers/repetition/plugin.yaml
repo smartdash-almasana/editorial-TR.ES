@@ -1,0 +1,34 @@
+id: reviewer.repetition
+version: 0.1.0
+type: reviewer
+name: Revisor de repetición
+description: Detecta repeticiones mecánicas de una frase configurada sin modificar la obra.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []
+inputs:
+  - manuscript_state
+outputs:
+  - review_findings
+rules:
+  - reviewer_never_mutates_work
+  - findings_must_reference_source_version
+capabilities:
+  - repeated_phrase_detection
+deterministic: true
+risks:
+  - false_positive_on_deliberate_repetition
+behavior:
+  finding_type: expression.repeated_phrase
+  scope:
+    - expression_block
+  severity: warning
+  evidence_format: exact_phrase
+  nature: deterministic
+  recommendation_policy: revisar si la repetición es deliberada o mecánica
+  implementation: repeated_phrase
+  parameters:
+    phrase: "muy"
+    minimum_occurrences: 2

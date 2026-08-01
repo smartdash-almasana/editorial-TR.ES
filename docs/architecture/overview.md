@@ -35,7 +35,7 @@ La plataforma integra conceptualmente los siguientes patrones clave:
 5. **WRITING.md (Manuales y Políticas de Estilo):** Definición explícita de reglas ortotipográficas, ritmo y transformaciones del texto.
 6. **Vale & Slopless (Revisión Determinista Anti-LLM):** Motor de reglas linters y filtros lingüísticos deterministas que detectan muletillas de IA (*slop*), clichés y fallas de estilo antes o durante la revisión.
 7. **Writing Intelligence (Review Ledger):** Un registro inmutable (*ledger*) de todas las observaciones, revisiones y decisiones editoriales, asegurando trazabilidad completa.
-8. **Smart Connections (Memoria Semántica Local):** Red de conexiones semánticas y contexto almacenada localmente en Markdown/vectores locales, manteniéndose fuera del runtime SaaS y preservando la privacidad del conocimiento editorial.
+8. **Semantic Memory / Retrieval:** La arquitectura requiere memoria semántica separada por ámbitos y recuperación contextual controlada. Smart Connections, Markdown, embeddings o vectores locales se consideran opciones de implementación históricas o auxiliares, no la arquitectura canónica ni la fuente de verdad. La autoridad permanece en los estados y fuentes versionados del dominio.
 9. **Fabric (Patrones y Orquestación de Prompts):** Modulación modular y reutilizable de patrones de prompting inyectados con contexto y restricciones constitucionales.
 
 ---

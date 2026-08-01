@@ -2,8 +2,10 @@
 from typing import Any, Mapping, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 from editorial_tres.domain.approvals import ApprovalGate
+from editorial_tres.domain.finding_decisions import FindingDecision
 from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
 from editorial_tres.domain.patches import Patch
+from editorial_tres.domain.reviews import ReviewFinding
 class _Command(BaseModel):
     command_id: str; idempotency_key: str; tenant_id: TenantId; editorial_id: EditorialId; work_id: WorkId; actor_id: ActorId; branch: str = "main"; expected_version: Optional[int] = Field(default=None, ge=1)
     model_config = {"frozen": True}
@@ -60,4 +62,44 @@ class ApplyApprovedPatchCommand(_Command):
             raise ValueError("Comando, Patch y aprobación deben pertenecer al mismo ámbito editorial.")
         if self.expected_version != self.patch.source_version or self.expected_version != self.approval.source_version:
             raise ValueError("La aplicación debe apuntar exactamente a la versión fuente aprobada.")
+        return self
+
+
+class RecordReviewFindingCommand(_Command):
+    finding: ReviewFinding
+    expected_version: int = Field(..., ge=1)
+
+    @model_validator(mode="after")
+    def _match_finding_scope(self) -> "RecordReviewFindingCommand":
+        scope = (self.tenant_id, self.editorial_id, self.work_id, self.branch)
+        finding_scope = (
+            self.finding.tenant_id,
+            self.finding.editorial_id,
+            self.finding.work_id,
+            self.finding.branch,
+        )
+        if scope != finding_scope:
+            raise ValueError("El comando y el finding deben pertenecer al mismo ámbito editorial.")
+        if self.expected_version != self.finding.source_version:
+            raise ValueError("El finding debe registrarse sobre la misma versión que diagnosticó.")
+        return self
+
+
+class DecideReviewFindingCommand(_Command):
+    decision: FindingDecision
+    expected_version: int = Field(..., ge=1)
+
+    @model_validator(mode="after")
+    def _match_decision_scope(self) -> "DecideReviewFindingCommand":
+        scope = (self.tenant_id, self.editorial_id, self.work_id, self.branch)
+        decision_scope = (
+            self.decision.tenant_id,
+            self.decision.editorial_id,
+            self.decision.work_id,
+            self.decision.branch,
+        )
+        if scope != decision_scope:
+            raise ValueError("El comando y la decisión deben pertenecer al mismo ámbito editorial.")
+        if self.decision.status == "pending":
+            raise ValueError("Sólo puede persistirse una decisión resuelta.")
         return self

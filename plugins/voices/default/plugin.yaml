@@ -1,10 +1,54 @@
 id: voice.default
-version: 0.1.0
+version: 0.2.0
 type: voice
 name: Voz por defecto
-description: Perfil de voz autoral neutro y claro.
+description: Perfil base de voz autoral clara, sobria y adaptable sin confundirse con narrador o estilo.
 entrypoint: SKILL.md
 language:
   - es
 compatible_with: []
 requires: []
+inputs:
+  - author_corpus
+  - approved_voice_context
+outputs:
+  - author_voice_guidance
+rules:
+  - preserve_author_identity
+  - do_not_infer_narrator
+  - do_not_replace_style_plugin
+reviewers:
+  - reviewer.voice_drift
+passes:
+  - pass.voice_alignment
+capabilities:
+  - author_identity_preservation
+  - voice_drift_detection
+  - controlled_variation
+deterministic: false
+risks:
+  - voice_flattening
+  - mimicry
+  - overfitting_to_examples
+behavior:
+  profile:
+    - claridad sin neutralizar singularidades expresivas
+    - continuidad de identidad autoral entre pasajes
+    - precisión sin imponer una estética ajena
+  patterns:
+    - conservar recurrencias expresivas aprobadas cuando tengan función
+    - respetar cadencias reconocibles del autor sin volverlas fórmula
+  anti_patterns:
+    - imitar superficialmente palabras o giros del corpus
+    - homogeneizar la prosa hacia una voz genérica
+    - confundir voz autoral con persona o focalización narrativa
+  approved_examples:
+    - conservar una irregularidad expresiva cuando sea consistente con la identidad autoral
+  rejected_examples:
+    - repetir tics del corpus para simular autenticidad
+  drift_signals:
+    - pérdida sostenida de rasgos autorales aprobados
+    - aparición de fórmulas genéricas ajenas al corpus y decisiones del autor
+  variation_rules:
+    - permitir desviaciones deliberadas cuando respondan a escena, género o propósito
+    - distinguir evolución de la voz de deriva involuntaria

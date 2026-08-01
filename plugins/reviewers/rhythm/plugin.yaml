@@ -1,0 +1,45 @@
+id: reviewer.rhythm
+version: 0.1.0
+type: reviewer
+name: Revisor de ritmo
+description: Detecta patrones mensurables de longitud y apertura de oraciones sin emitir juicios estéticos ni modificar la obra.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []
+inputs:
+  - manuscript_state
+outputs:
+  - review_findings
+rules:
+  - reviewer_never_mutates_work
+  - findings_must_reference_source_version
+  - rhythm_signals_are_not_aesthetic_verdicts
+capabilities:
+  - short_sentence_run_detection
+  - long_sentence_run_detection
+  - sentence_length_uniformity_detection
+  - repeated_sentence_opening_detection
+deterministic: true
+risks:
+  - false_positive_on_deliberate_cadence
+  - abbreviation_sensitive_sentence_segmentation
+behavior:
+  finding_type: expression.rhythm.signal
+  scope:
+    - expression_block
+  severity: warning
+  evidence_format: sentence_excerpt_or_word_counts
+  nature: deterministic
+  recommendation_policy: revisar si el patrón rítmico detectado es deliberado o mecánico
+  implementation: rhythm
+  parameters:
+    short_sentence_max_words: 3
+    long_sentence_min_words: 35
+    minimum_short_run: 4
+    minimum_long_run: 3
+    uniformity_min_sentences: 6
+    uniformity_max_word_range: 2
+    opening_word_count: 2
+    minimum_repeated_openings: 4

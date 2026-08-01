@@ -4,7 +4,8 @@ Resolución de la composición de plugins para un proyecto editorial.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
+
 from pydantic import BaseModel, Field
 
 from editorial_tres.application.handlers import (
@@ -12,28 +13,42 @@ from editorial_tres.application.handlers import (
     ApplyApprovedPatchHandler,
     CreateBranchHandler,
     CreateWorkHandler,
+    DecideReviewFindingHandler,
     EditContentBlockHandler,
+    RecordReviewFindingHandler,
     RegisterDependencyHandler,
+    get_review_history,
 )
 from editorial_tres.application.projections import CurrentWorkProjection
+from editorial_tres.capability_factory import (
+    CapabilityFactoryRegistry,
+    default_reviewer_registry,
+)
 from editorial_tres.exceptions import (
     IncompatibilityError,
+    InvalidManifestError,
     MissingDependencyError,
     PluginNotFoundError,
+    RequiredReviewerNotFoundError,
 )
 from editorial_tres.infrastructure.sqlite.event_store import SQLiteEventStore
 from editorial_tres.plugin_contract import PluginManifest
 from editorial_tres.plugin_registry import PluginRegistry
+from editorial_tres.plugin_runtime import ActivatedPlugin, PluginRuntime
 from editorial_tres.project_manifest import ProjectManifest
 
 CATEGORY_PRIORITY = [
+    "editorial",
     "genre",
     "voice",
     "narrator",
+    "research_method",
     "workflow",
     "style",
     "reviewer",
     "visual",
+    "visual_type",
+    "visual_style",
     "output",
 ]
 
@@ -50,6 +65,24 @@ class ProjectComposition(BaseModel):
     resolved_plugins: List[PluginManifest] = Field(default_factory=list)
     plugins_by_type: Dict[str, List[PluginManifest]] = Field(default_factory=dict)
     composition_order: List[str] = Field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ActivatedProjectComposition:
+    """Vista runtime trazable de una composición estática ya materializable."""
+
+    project_composition: ProjectComposition
+    activated_plugins: Tuple[ActivatedPlugin, ...]
+    required_reviewer_ids: Tuple[str, ...]
+
+    def get(self, plugin_id: str) -> ActivatedPlugin:
+        """Obtiene un plugin activado sin perder el orden de activación conservado."""
+        for plugin in self.activated_plugins:
+            if plugin.id == plugin_id:
+                return plugin
+        raise PluginNotFoundError(
+            f"El plugin activo '{plugin_id}' no forma parte de la composición activada."
+        )
 
 
 def compose_project(project_path: Path, plugins_root: Path) -> ProjectComposition:
@@ -140,6 +173,106 @@ def compose_project(project_path: Path, plugins_root: Path) -> ProjectCompositio
     )
 
 
+def _ordered_unique(values: List[str]) -> Tuple[str, ...]:
+    ordered: List[str] = []
+    seen: Set[str] = set()
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        ordered.append(value)
+    return tuple(ordered)
+
+
+def _required_reviewer_ids(
+    composition: ProjectComposition,
+    activated_plugins: List[ActivatedPlugin],
+) -> Tuple[str, ...]:
+    """Reúne requirements para validación runtime, sin producir un ReviewPlan."""
+    required = list(composition.project.plugins.reviewers)
+    for plugin in activated_plugins:
+        if plugin.genre is not None:
+            required.extend(plugin.genre.required_reviewers)
+        if plugin.workflow is not None:
+            required.extend(plugin.workflow.required_reviewers)
+    return _ordered_unique(required)
+
+
+def activate_project_composition(
+    composition: ProjectComposition,
+    plugin_catalog: PluginRegistry,
+    *,
+    reviewer_registry: CapabilityFactoryRegistry | None = None,
+) -> ActivatedProjectComposition:
+    """Activa una composición estática y verifica reviewers materializables.
+
+    Los plugins ya resueltos se activan estrictamente en ``composition_order``.
+    Los reviewers exigidos por proyecto, género o workflow se resuelven contra
+    el catálogo explícito y, si no estaban en la composición estática, se
+    activan después en orden determinista de requirement.  La construcción se
+    usa únicamente como validación fail-fast: no crea ReviewPlan ni ReviewEngine.
+    """
+    active_runtime = PluginRuntime()
+    factories = reviewer_registry or default_reviewer_registry()
+
+    resolved_by_id = {
+        manifest.id: manifest for manifest in composition.resolved_plugins
+    }
+    if len(resolved_by_id) != len(composition.resolved_plugins):
+        raise InvalidManifestError(
+            "ProjectComposition contiene IDs de plugin duplicados en resolved_plugins."
+        )
+
+    ordered_ids = tuple(composition.composition_order)
+    resolved_ids = set(resolved_by_id)
+    if set(ordered_ids) != resolved_ids or len(ordered_ids) != len(resolved_ids):
+        raise InvalidManifestError(
+            "ProjectComposition no conserva correspondencia exacta entre "
+            "composition_order y resolved_plugins."
+        )
+
+    activated_plugins: List[ActivatedPlugin] = []
+    activated_by_id: Dict[str, ActivatedPlugin] = {}
+    for plugin_id in ordered_ids:
+        activated = active_runtime.activate(resolved_by_id[plugin_id])
+        activated_plugins.append(activated)
+        activated_by_id[plugin_id] = activated
+
+    required_reviewer_ids = _required_reviewer_ids(composition, activated_plugins)
+
+    for reviewer_id in required_reviewer_ids:
+        try:
+            reviewer_manifest = plugin_catalog.get(reviewer_id)
+        except PluginNotFoundError as exc:
+            raise RequiredReviewerNotFoundError(
+                f"La composición requiere el reviewer '{reviewer_id}', "
+                "pero no existe en el catálogo de plugins."
+            ) from exc
+
+        activated_reviewer = activated_by_id.get(reviewer_id)
+        if activated_reviewer is None:
+            activated_reviewer = active_runtime.activate(reviewer_manifest)
+            activated_plugins.append(activated_reviewer)
+            activated_by_id[reviewer_id] = activated_reviewer
+
+        if activated_reviewer.type != "reviewer" or activated_reviewer.reviewer is None:
+            raise InvalidManifestError(
+                f"El plugin requerido '{reviewer_id}' no declara un behavior reviewer ejecutable."
+            )
+
+        factories.build(
+            activated_reviewer.reviewer.implementation,
+            reviewer_id,
+            activated_reviewer.reviewer,
+        )
+
+    return ActivatedProjectComposition(
+        project_composition=composition,
+        activated_plugins=tuple(activated_plugins),
+        required_reviewer_ids=required_reviewer_ids,
+    )
+
+
 @dataclass
 class EditorialApplication:
     """Runtime dependencies assembled around the persistent Event Store."""
@@ -152,11 +285,17 @@ class EditorialApplication:
     edit_content_block: EditContentBlockHandler
     register_dependency: RegisterDependencyHandler
     create_branch: CreateBranchHandler
+    record_review_finding: RecordReviewFindingHandler
+    decide_review_finding: DecideReviewFindingHandler
 
     def rebuild_work(self, tenant_id, editorial_id, work_id, branch: str = "main") -> None:
         """Rebuild one current-work read model from its persisted event stream."""
         events = self.event_store.get_events(tenant_id, editorial_id, work_id, branch)
         self.current_work_projection.rebuild_work(events, branch=branch)
+
+    def review_history(self, tenant_id, editorial_id, work_id, branch: str = "main"):
+        """Return replayed review findings and decisions for one work branch."""
+        return get_review_history(self.event_store, tenant_id, editorial_id, work_id, branch)
 
     def close(self) -> None:
         self.event_store.close()
@@ -185,4 +324,6 @@ def compose_application(database_path: str | Path) -> EditorialApplication:
         edit_content_block=EditContentBlockHandler(event_store, projection),
         register_dependency=RegisterDependencyHandler(event_store, projection),
         create_branch=CreateBranchHandler(event_store, projection),
+        record_review_finding=RecordReviewFindingHandler(event_store, projection),
+        decide_review_finding=DecideReviewFindingHandler(event_store, projection),
     )

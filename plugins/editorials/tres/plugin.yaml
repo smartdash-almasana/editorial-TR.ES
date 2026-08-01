@@ -1,0 +1,56 @@
+id: editorial.tres
+version: 0.1.0
+type: editorial
+name: Editorial TR.ES
+description: Constitución editorial base para producir obras originales, trazables y publicables sin borrar la identidad autoral.
+entrypoint: SKILL.md
+language:
+  - es
+compatible_with: []
+requires: []
+inputs:
+  - work_state
+  - author_context
+outputs:
+  - editorial_constraints
+  - approval_criteria
+rules:
+  - preserve_author_authority
+  - preserve_traceability
+  - separate_review_from_transformation
+capabilities:
+  - editorial_governance
+  - source_governance
+  - approval_governance
+deterministic: true
+risks:
+  - institutional_homogenization
+  - policy_overreach
+behavior:
+  constitution:
+    - preservar la identidad autoral y la originalidad de cada obra
+    - mantener trazabilidad de decisiones, fuentes y transformaciones
+    - separar diagnóstico, propuesta, aprobación y aplicación
+  policies:
+    - ninguna transformación editorial sustituye silenciosamente el estado canónico
+    - la política institucional orienta y restringe sin imponer una voz literaria común
+  terminology:
+    - WorkGraph es la autoridad estructurada de la obra
+    - Patch es una propuesta de transformación y no una mutación aplicada
+    - ReviewFinding es diagnóstico y no reescritura
+  roles:
+    - autor conserva autoridad sobre identidad y decisiones creativas sensibles
+    - editor conserva autoridad sobre aprobación editorial según alcance acordado
+  approval_criteria:
+    - coherencia con la intención declarada de la obra
+    - trazabilidad suficiente de cambios y fuentes
+    - preservación de la identidad autoral
+  source_standards:
+    - toda afirmación que requiera respaldo debe conservar vínculo con su fuente autorizada
+    - incertidumbre y contradicción deben permanecer visibles cuando sean relevantes
+  institutional_identity:
+    - excelencia literaria y editorial sin homogeneización de voces
+    - producción multimodal coherente desde una única obra estructurada
+  branding:
+    - TR.ES transforma obras
+    - App Book transforma la lectura
