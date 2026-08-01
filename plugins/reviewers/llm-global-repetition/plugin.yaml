@@ -1,0 +1,52 @@
+id: reviewer.llm-global-repetition
+version: 0.1.0
+type: reviewer
+name: Revisor LLM de reiteraciones globales
+description: Descubre reiteraciones literales y semánticas distribuidas entre bloques mediante un LLM, con evidencia verificable y revisión humana obligatoria.
+entrypoint: SKILL.md
+language:
+  - es
+  - es-AR
+compatible_with:
+  - genre.novel
+requires: []
+inputs:
+  - manuscript_state
+outputs:
+  - review_findings
+rules:
+  - reviewer_never_mutates_work
+  - every_quote_must_match_source_text
+  - multiblock_findings_require_human_review
+  - multiblock_findings_cannot_create_direct_patch
+models:
+  - gemini-3.6-flash
+capabilities:
+  - semantic_cross_block_repetition_discovery
+  - recurring_image_detection
+  - narrative_motif_candidate_detection
+  - character_catchphrase_candidate_detection
+  - possible_redundancy_detection
+deterministic: false
+risks:
+  - false_positive_on_deliberate_repetition
+  - false_negative_on_subtle_motifs
+  - provider_variability
+  - model_cost
+behavior:
+  finding_type: structure.llm_cross_block_repetition
+  scope:
+    - manuscript
+    - expression_block
+  severity: warning
+  evidence_format: verified_exact_quotes_with_block_ids
+  nature: llm_assisted
+  recommendation_policy: revisión humana obligatoria; no aplicar cambios directamente
+  implementation: llm_global_repetition
+  parameters:
+    api_key_env: GEMINI_API_KEY
+    model: gemini-3.6-flash
+    minimum_confidence: 0.55
+    timeout_seconds: 90
+    max_blocks: 250
+    max_characters: 300000

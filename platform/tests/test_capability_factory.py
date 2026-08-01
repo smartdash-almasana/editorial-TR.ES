@@ -12,6 +12,7 @@ from editorial_tres.capability_factory import (
     CapabilityFactoryRegistry,
     default_reviewer_registry,
 )
+from editorial_tres.domain.llm_repetition import LLMGlobalRepetitionReviewer
 from editorial_tres.domain.reviews import (
     ContinuityReviewer,
     RepeatedPhraseReviewer,
@@ -54,11 +55,12 @@ _VALID_CONTINUITY_RULE = {
 # ---------------------------------------------------------------------------
 
 
-def test_default_registry_registers_the_four_canonical_implementations():
+def test_default_registry_registers_the_canonical_implementations():
     registry = default_reviewer_registry()
 
     assert registry.registered_implementations() == (
         "configured_continuity",
+        "llm_global_repetition",
         "repeated_phrase",
         "rhythm",
         "structural",
@@ -76,6 +78,7 @@ def test_default_registry_reports_membership_via_has():
     assert registry.has("structural") is True
     assert registry.has("configured_continuity") is True
     assert registry.has("rhythm") is True
+    assert registry.has("llm_global_repetition") is True
     assert registry.has("no_registrada") is False
 
 
@@ -169,6 +172,43 @@ def test_build_rhythm_rejects_invalid_threshold_order():
 
     with pytest.raises(InvalidManifestError, match="umbrales rítmicos inválidos"):
         default_reviewer_registry().build("rhythm", "reviewer.rhythm", behavior)
+
+
+def test_build_llm_global_repetition_from_environment(monkeypatch):
+    monkeypatch.setenv("TEST_GEMINI_KEY", "secret")
+    behavior = _behavior(
+        "llm_global_repetition",
+        api_key_env="TEST_GEMINI_KEY",
+        model="gemini-3.6-flash",
+        minimum_confidence=0.7,
+    )
+
+    reviewer = default_reviewer_registry().build(
+        "llm_global_repetition",
+        "reviewer.llm-repetition",
+        behavior,
+    )
+
+    assert isinstance(reviewer, LLMGlobalRepetitionReviewer)
+    assert reviewer.reviewer_id == "reviewer.llm-repetition"
+    assert reviewer.llm_provider_id == "google-gemini"
+    assert reviewer.llm_model_id == "gemini-3.6-flash"
+    assert reviewer.minimum_confidence == 0.7
+
+
+def test_build_llm_global_repetition_requires_api_key(monkeypatch):
+    monkeypatch.delenv("MISSING_GEMINI_KEY", raising=False)
+    behavior = _behavior(
+        "llm_global_repetition",
+        api_key_env="MISSING_GEMINI_KEY",
+    )
+
+    with pytest.raises(InvalidManifestError, match="MISSING_GEMINI_KEY"):
+        default_reviewer_registry().build(
+            "llm_global_repetition",
+            "reviewer.llm-repetition",
+            behavior,
+        )
 
 
 # ---------------------------------------------------------------------------

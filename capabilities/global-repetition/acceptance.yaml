@@ -1,51 +1,51 @@
 schema_version: editorial.tres/acceptance-v1
 capability: editorial.global-repetition
 criteria:
-  - id: capability_valid
-    description: La declaración de capacidad cumple su schema cerrado.
-    observable: El guard carga capability.yaml sin errores de validación.
+  - id: structured_output_is_typed
+    description: La respuesta LLM se valida contra modelos cerrados antes de producir hallazgos.
+    observable: Payloads inválidos son rechazados por validación.
     required: true
-  - id: cycle_valid
-    description: El ciclo GR-0 cumple su schema cerrado.
-    observable: El guard carga GR-0.yaml sin errores de validación.
+  - id: evidence_is_source_verifiable
+    description: Toda cita debe existir literalmente en el bloque declarado.
+    observable: Una cita inventada o un bloque inexistente falla explícitamente.
     required: true
-  - id: active_task_resolves_cycle
-    description: ACTIVE_TASK referencia y resuelve el único ciclo autorizado.
-    observable: El guard obtiene GR-0 desde cycle_file y valida su coherencia.
+  - id: findings_are_multiblock
+    description: Cada candidato global abarca al menos dos bloques distintos.
+    observable: Clusters de un solo bloque o apariciones duplicadas son rechazados.
     required: true
-  - id: identifier_mismatch_fails
-    description: Las divergencias de task_id o capability se rechazan.
-    observable: El guard termina con error concreto ante cualquier mismatch.
+  - id: manuscript_scope_is_preserved
+    description: El hallazgo conserva tenant, editorial, obra, rama y versión material.
+    observable: ReviewFinding queda ligado al mismo scope y manuscript_version de la entrada.
     required: true
-  - id: path_escape_fails
-    description: Ningún cycle_file puede escapar de capabilities.
-    observable: Rutas absolutas, traversal y rutas externas son rechazadas.
+  - id: provider_is_behind_port
+    description: El dominio depende de StructuredLLMPort y no de Gemini.
+    observable: El reviewer se prueba con un fake provider-neutral.
     required: true
-  - id: out_of_scope_diff_fails
-    description: Un cambio fuera de allowed_paths queda bloqueado.
-    observable: evaluate_task informa la ruta fuera de alcance y falla.
+  - id: gemini_adapter_matches_official_contract
+    description: El adaptador genera una solicitud REST con salida JSON estructurada.
+    observable: El test de transporte comprueba endpoint, headers, schema, timeout y parseo.
     required: true
-  - id: forbidden_path_fails
-    description: Un path explícitamente prohibido queda bloqueado.
-    observable: evaluate_task informa la ruta prohibida y falla.
+  - id: reviewer_is_non_destructive
+    description: La revisión no modifica Work ni crea Patch.
+    observable: La salida se limita a ReviewFinding y la obra de entrada permanece igual.
     required: true
-  - id: change_budget_fails_closed
-    description: El guard aplica el presupuesto de cambio declarado.
-    observable: Exceder archivos productivos o dependencias permitidas bloquea el ciclo.
+  - id: multiblock_patch_is_blocked
+    description: Un hallazgo multibloque no puede alimentar una edición simple.
+    observable: FindingDrivenBlockEditPass rechaza related_target_ids múltiples.
     required: true
-  - id: dependencies_are_guarded
-    description: Los manifiestos de dependencias no pueden cambiar sin presupuesto.
-    observable: Un cambio de dependencia con max_new_dependencies igual a cero falla.
+  - id: plugin_is_resolvable
+    description: El manifest declara llm_global_repetition y la fábrica lo construye explícitamente.
+    observable: CapabilityFactoryRegistry resuelve el implementation_id con proveedor autorizado.
     required: true
-  - id: commit_push_forbidden
-    description: Commit y push permanecen prohibidos en GR-0.
-    observable: intent commit e intent push retornan bloqueo.
+  - id: limits_fail_explicitly
+    description: Los límites de bloques y caracteres no truncan silenciosamente.
+    observable: Superar max_blocks o max_characters produce un error gobernado.
     required: true
-  - id: guard_is_read_only
-    description: El guard no modifica archivos al validar.
-    observable: El digest del repositorio es idéntico antes y después del check.
+  - id: no_live_provider_in_tests
+    description: La validación automática no consume red, API key ni costo del proveedor.
+    observable: Los tests usan transporte y LLM simulados.
     required: true
-  - id: no_automatic_advance
-    description: El siguiente ciclo no se activa automáticamente.
-    observable: completion.advance_next_cycle permanece false y sólo existe GR-0.
+  - id: regression_remains_green
+    description: La plataforma conserva sus contratos vecinos.
+    observable: La suite estricta declarada finaliza sin fallos ni warnings.
     required: true

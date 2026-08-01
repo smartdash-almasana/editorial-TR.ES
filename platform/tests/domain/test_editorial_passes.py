@@ -3,10 +3,15 @@
 import pytest
 from pydantic import ValidationError
 
-from editorial_tres.domain.editorial_passes import DeterministicBlockEditPass
+from editorial_tres.domain.editorial_passes import (
+    DeterministicBlockEditPass,
+    FindingDrivenBlockEditPass,
+)
+from editorial_tres.domain.finding_decisions import FindingDecision
 from editorial_tres.domain.graphs.expression import ContentBlock
 from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
 from editorial_tres.domain.patches import PatchOperation
+from editorial_tres.domain.reviews import ReviewFinding
 from editorial_tres.domain.work import Work
 
 
@@ -119,3 +124,46 @@ def test_patch_operation_and_pass_are_immutable() -> None:
         operation.after_content = "Mutado"
     with pytest.raises(ValidationError):
         editorial_pass.replacement_content = "Mutado"
+
+
+def test_multiblock_finding_cannot_feed_single_block_edit_pass() -> None:
+    work = _work_with_block()
+    work = work.model_copy(
+        update={
+            "expression_graph": work.expression_graph.add_block(
+                ContentBlock(
+                    id="block-2",
+                    block_type="paragraph",
+                    content="Otra aparición relacionada.",
+                    position=1,
+                )
+            )
+        }
+    )
+    finding = ReviewFinding(
+        finding_id="finding-multiblock",
+        reviewer_id="reviewer.llm",
+        finding_type="structure.llm_cross_block_repetition",
+        tenant_id=work.tenant_id,
+        editorial_id=work.editorial_id,
+        work_id=work.work_id,
+        branch="main",
+        source_version=work.manuscript_version,
+        target_id="block-1",
+        related_target_ids=("block-1", "block-2"),
+        severity="warning",
+        evidence="evidencia multibloque",
+        description="Dos apariciones relacionadas.",
+    )
+    decision = FindingDecision.for_finding(
+        finding,
+        decision_id="decision-multiblock",
+    ).accept(actor_id=ActorId(value="actor.editor"))
+
+    with pytest.raises(ValueError, match="multibloque"):
+        FindingDrivenBlockEditPass(
+            pass_id="pass.invalid-multiblock",
+            finding=finding,
+            decision=decision,
+            replacement_content="Cambio parcial indebido.",
+        ).propose(work)

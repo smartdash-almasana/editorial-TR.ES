@@ -1,7 +1,7 @@
 schema_version: editorial.tres/capability-v1
 id: editorial.global-repetition
 title: Detección global de reiteraciones
-status: DECLARED
+status: EXPERIMENTAL
 category: reviewer
 
 invariants:
@@ -10,6 +10,8 @@ invariants:
   - binds_to_manuscript_version
   - requires_human_classification
   - never_creates_patch_directly
+  - verifies_every_quote_against_source
+  - rejects_multiblock_direct_edit
 
 dependencies:
   - review-engine
@@ -17,11 +19,9 @@ dependencies:
   - capability-factory
 
 forbidden:
-  - kernel_changes
-  - plugin_runtime_changes
-  - provider_integration
-  - llm
-  - external_api
   - automatic_rewrite
+  - automatic_editorial_decision
+  - direct_patch_creation
+  - silent_truncation
   - ui
   - new_database

@@ -26,6 +26,7 @@ class ReviewFinding(BaseModel):
     branch: str = "main"
     source_version: int = Field(ge=1)
     target_id: str
+    related_target_ids: Tuple[str, ...] = ()
     severity: FindingSeverity
     evidence: str
     description: str
@@ -47,6 +48,16 @@ class ReviewFinding(BaseModel):
         if not value or not value.strip():
             raise ValueError("El valor es obligatorio.")
         return value.strip()
+
+    @field_validator("related_target_ids")
+    @classmethod
+    def _normalize_related_targets(cls, values: Tuple[str, ...]) -> Tuple[str, ...]:
+        normalized = tuple(value.strip() for value in values)
+        if any(not value for value in normalized):
+            raise ValueError("Los bloques relacionados no pueden tener identificadores vacíos.")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("Los bloques relacionados no pueden repetirse.")
+        return normalized
 
     @field_validator("recommended_action")
     @classmethod
@@ -127,6 +138,108 @@ class RepeatedPhraseReviewer(BaseModel, Reviewer):
                         f"La frase aparece {occurrences} veces en el bloque '{block.id}'."
                     ),
                     recommended_action="Revisar si la repetición es deliberada o mecánica.",
+                )
+            )
+
+        return tuple(findings)
+
+
+class CrossBlockRepetitionReviewer(BaseModel, Reviewer):
+    """Detect configured formulations repeated across distinct manuscript blocks.
+
+    The reviewer gathers evidence only. It never infers authorial intention and never
+    proposes an automatic transformation because a cross-block recurrence may be a
+    symbol, motif, deliberate echo, involuntary tic, or mechanical repetition.
+    """
+
+    reviewer_id: str
+    phrases: Tuple[str, ...]
+    minimum_total_occurrences: int = Field(default=2, ge=2)
+    minimum_distinct_blocks: int = Field(default=2, ge=2)
+    case_sensitive: bool = False
+    severity: FindingSeverity = "warning"
+
+    model_config = {"frozen": True}
+
+    @field_validator("reviewer_id")
+    @classmethod
+    def _cross_block_reviewer_id(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("El reviewer_id es obligatorio.")
+        return value.strip()
+
+    @field_validator("phrases")
+    @classmethod
+    def _cross_block_phrases(cls, values: Tuple[str, ...]) -> Tuple[str, ...]:
+        normalized = tuple(value.strip() for value in values if value and value.strip())
+        if not normalized:
+            raise ValueError("CrossBlockRepetitionReviewer requiere formulaciones configuradas.")
+        folded = tuple(value.casefold() for value in normalized)
+        if len(folded) != len(set(folded)):
+            raise ValueError("Las formulaciones globales no pueden repetirse.")
+        return normalized
+
+    def review(self, work: Work, branch: str = "main") -> Tuple[ReviewFinding, ...]:
+        normalized_branch = branch.strip() if branch else ""
+        if not normalized_branch:
+            raise ValueError("La rama no puede estar vacía.")
+
+        blocks = tuple(work.expression_graph.get_all_blocks())
+        findings: list[ReviewFinding] = []
+        for phrase in self.phrases:
+            needle = phrase if self.case_sensitive else phrase.casefold()
+            distribution: list[tuple[str, int]] = []
+            for block in blocks:
+                haystack = block.content if self.case_sensitive else block.content.casefold()
+                occurrences = haystack.count(needle)
+                if occurrences:
+                    distribution.append((block.id, occurrences))
+
+            total_occurrences = sum(count for _, count in distribution)
+            if total_occurrences < self.minimum_total_occurrences:
+                continue
+            if len(distribution) < self.minimum_distinct_blocks:
+                continue
+
+            target_ids = tuple(block_id for block_id, _ in distribution)
+            distribution_text = ", ".join(
+                f"{block_id} ({count})" for block_id, count in distribution
+            )
+            fingerprint = "|".join(
+                (
+                    self.reviewer_id,
+                    work.tenant_id.value,
+                    work.editorial_id.value,
+                    work.work_id.value,
+                    normalized_branch,
+                    str(work.manuscript_version),
+                    phrase,
+                    distribution_text,
+                )
+            )
+            findings.append(
+                ReviewFinding(
+                    finding_id=f"finding-{hashlib.sha256(fingerprint.encode()).hexdigest()[:16]}",
+                    reviewer_id=self.reviewer_id,
+                    finding_type="structure.cross_block_repetition",
+                    tenant_id=work.tenant_id,
+                    editorial_id=work.editorial_id,
+                    work_id=work.work_id,
+                    branch=normalized_branch,
+                    source_version=work.manuscript_version,
+                    target_id=target_ids[0],
+                    related_target_ids=target_ids,
+                    severity=self.severity,
+                    evidence=f"{phrase} | {distribution_text}",
+                    description=(
+                        f"La formulación aparece {total_occurrences} veces distribuida en "
+                        f"{len(distribution)} bloques del manuscrito."
+                    ),
+                    recommended_action=(
+                        "Clasificar mediante revisión humana si funciona como símbolo recurrente, "
+                        "motivo narrativo, latiguillo involuntario, repetición mecánica o eco "
+                        "deliberado. No corregir automáticamente."
+                    ),
                 )
             )
 

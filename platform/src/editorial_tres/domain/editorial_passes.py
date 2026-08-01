@@ -130,6 +130,10 @@ class FindingDrivenBlockEditPass(BaseModel, EditorialPass):
             raise ValueError("ReviewFinding y FindingDecision deben referir a la misma revisión del manuscrito.")
         if work.manuscript_version != self.finding.source_version:
             raise ValueError("El manuscrito cambió después del ReviewFinding aceptado.")
+        if len(self.finding.related_target_ids) > 1:
+            raise ValueError(
+                "Un hallazgo multibloque no puede alimentar una edición simple de un solo bloque."
+            )
 
         block = work.expression_graph.get_block(self.finding.target_id)
         if block is None:

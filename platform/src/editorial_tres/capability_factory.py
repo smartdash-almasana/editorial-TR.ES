@@ -12,10 +12,12 @@ construir el objeto.
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Callable, Dict, Tuple
 
 from pydantic import ValidationError
 
+from editorial_tres.domain.llm_repetition import LLMGlobalRepetitionReviewer
 from editorial_tres.domain.reviews import (
     ContinuityReviewer,
     ContinuityRule,
@@ -152,6 +154,48 @@ def build_rhythm(plugin_id: str, behavior: ReviewerBehavior) -> Reviewer:
         ) from exc
 
 
+def build_llm_global_repetition(plugin_id: str, behavior: ReviewerBehavior) -> Reviewer:
+    """Construye revisión semántica global mediante Gemini con salida estructurada."""
+    from editorial_tres.infrastructure.gemini_structured_llm import (
+        GeminiStructuredLLMAdapter,
+    )
+
+    api_key_env = str(
+        behavior.parameters.get("api_key_env", "GEMINI_API_KEY")
+    ).strip()
+    api_key = os.environ.get(api_key_env, "")
+    if not api_key:
+        raise InvalidManifestError(
+            f"El reviewer '{plugin_id}' requiere la variable de entorno '{api_key_env}'."
+        )
+    try:
+        adapter = GeminiStructuredLLMAdapter(
+            api_key=api_key,
+            model=str(
+                behavior.parameters.get("model", "gemini-3.6-flash")
+            ).strip(),
+            timeout_seconds=float(
+                behavior.parameters.get("timeout_seconds", 90)
+            ),
+        )
+        return LLMGlobalRepetitionReviewer(
+            reviewer_id=plugin_id,
+            llm=adapter,
+            minimum_confidence=float(
+                behavior.parameters.get("minimum_confidence", 0.55)
+            ),
+            severity=behavior.severity,
+            max_blocks=int(behavior.parameters.get("max_blocks", 250)),
+            max_characters=int(
+                behavior.parameters.get("max_characters", 300_000)
+            ),
+        )
+    except (TypeError, ValueError) as exc:
+        raise InvalidManifestError(
+            f"El reviewer '{plugin_id}' declara parámetros LLM inválidos: {exc}"
+        ) from exc
+
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
@@ -231,7 +275,7 @@ _default_registry: CapabilityFactoryRegistry | None = None
 
 
 def default_reviewer_registry() -> CapabilityFactoryRegistry:
-    """Retorna el registry singleton con las cuatro implementaciones canónicas."""
+    """Retorna el registry singleton con las implementaciones canónicas."""
     global _default_registry
     if _default_registry is None:
         registry = CapabilityFactoryRegistry()
@@ -239,6 +283,7 @@ def default_reviewer_registry() -> CapabilityFactoryRegistry:
         registry.register("structural", build_structural)
         registry.register("configured_continuity", build_configured_continuity)
         registry.register("rhythm", build_rhythm)
+        registry.register("llm_global_repetition", build_llm_global_repetition)
         registry.freeze()
         _default_registry = registry
     return _default_registry

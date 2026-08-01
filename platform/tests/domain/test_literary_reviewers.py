@@ -8,6 +8,7 @@ from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
 from editorial_tres.domain.reviews import (
     ContinuityReviewer,
     ContinuityRule,
+    CrossBlockRepetitionReviewer,
     RhythmReviewer,
     StructuralReviewer,
     VoiceDriftReviewer,
@@ -29,6 +30,37 @@ def _work(content: str) -> Work:
         editorial_id=editorial_id,
         work_id=work_id,
         title="Prueba",
+        language="es",
+        knowledge_graph=KnowledgeGraph(tenant_id=tenant_id, editorial_id=editorial_id, work_id=work_id),
+        narrative_graph=NarrativeGraph(tenant_id=tenant_id, editorial_id=editorial_id, work_id=work_id),
+        expression_graph=expression,
+        dependency_graph=DependencyGraph(tenant_id=tenant_id, editorial_id=editorial_id, work_id=work_id),
+    )
+
+
+def _multi_block_work(contents: tuple[str, ...]) -> Work:
+    tenant_id = TenantId(value="tenant.demo")
+    editorial_id = EditorialId(value="editorial.tres")
+    work_id = WorkId(value="work.cross_block_reviewers")
+    expression = ExpressionGraph(
+        tenant_id=tenant_id,
+        editorial_id=editorial_id,
+        work_id=work_id,
+    )
+    for position, content in enumerate(contents, start=1):
+        expression = expression.add_block(
+            ContentBlock(
+                id=f"block-{position}",
+                block_type="paragraph",
+                content=content,
+                position=position,
+            )
+        )
+    return Work(
+        tenant_id=tenant_id,
+        editorial_id=editorial_id,
+        work_id=work_id,
+        title="Prueba global",
         language="es",
         knowledge_graph=KnowledgeGraph(tenant_id=tenant_id, editorial_id=editorial_id, work_id=work_id),
         narrative_graph=NarrativeGraph(tenant_id=tenant_id, editorial_id=editorial_id, work_id=work_id),
@@ -89,11 +121,52 @@ def test_structural_reviewer_detects_duplicate_paragraph_and_thematic_reiteratio
     }
 
 
+def test_cross_block_repetition_reviewer_emits_one_global_finding():
+    reviewer = CrossBlockRepetitionReviewer(
+        reviewer_id="reviewer.cross-block",
+        phrases=("¡Xóchitl! ¡Xóchitl! ¡Xóchitl!",),
+        minimum_total_occurrences=3,
+        minimum_distinct_blocks=3,
+    )
+    work = _multi_block_work(
+        (
+            "El primer muchacho dijo: ¡Xóchitl! ¡Xóchitl! ¡Xóchitl!",
+            "El segundo repitió: ¡Xóchitl! ¡Xóchitl! ¡Xóchitl!",
+            "Ixcauatzin ofreció su sangre: ¡Xóchitl! ¡Xóchitl! ¡Xóchitl!",
+        )
+    )
+
+    findings = reviewer.review(work)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.finding_type == "structure.cross_block_repetition"
+    assert finding.target_id == "block-1"
+    assert finding.related_target_ids == ("block-1", "block-2", "block-3")
+    assert "3 veces" in finding.description
+    assert "3 bloques" in finding.description
+    assert "No corregir automáticamente" in finding.recommended_action
+
+
+def test_cross_block_repetition_reviewer_ignores_repetition_inside_one_block():
+    reviewer = CrossBlockRepetitionReviewer(
+        reviewer_id="reviewer.cross-block",
+        phrases=("eco",),
+        minimum_total_occurrences=2,
+        minimum_distinct_blocks=2,
+    )
+    work = _multi_block_work(("eco eco", "otra escena"))
+
+    assert reviewer.review(work) == ()
+
+
 def test_literary_reviewers_reject_empty_configuration():
     with pytest.raises(ValueError):
         VoiceDriftReviewer(reviewer_id="reviewer.voice", drift_markers=())
     with pytest.raises(ValueError):
         ContinuityReviewer(reviewer_id="reviewer.continuity", rules=())
+    with pytest.raises(ValueError):
+        CrossBlockRepetitionReviewer(reviewer_id="reviewer.cross-block", phrases=())
 
 
 def test_rhythm_reviewer_detects_short_sentence_run():

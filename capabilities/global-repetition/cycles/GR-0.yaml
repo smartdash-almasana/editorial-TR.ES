@@ -2,7 +2,7 @@ schema_version: editorial.tres/cycle-v1
 id: GR-0
 capability: editorial.global-repetition
 objective: establish_declarative_capability_harness
-status: ACTIVE
+status: CLOSED_PASS
 
 allowed_paths:
   - capabilities/schemas/**
