@@ -47,7 +47,7 @@ def _finding(work: Work) -> ReviewFinding:
         editorial_id=work.editorial_id,
         work_id=work.work_id,
         branch="main",
-        source_version=work.version,
+        source_version=work.manuscript_version,
         target_id="block-1",
         severity="warning",
         evidence="eco",
@@ -141,9 +141,14 @@ def test_finding_driven_pass_rejects_stale_snapshot() -> None:
     work = _work()
     finding = _finding(work)
     decision = FindingDecision.for_finding(finding, decision_id="decision-1").accept(actor_id=ACTOR)
-    newer_work = work.model_copy(update={"version": work.version + 1})
+    newer_work = work.model_copy(
+        update={
+            "version": work.version + 1,
+            "manuscript_version": work.manuscript_version + 1,
+        }
+    )
 
-    with pytest.raises(ValueError, match="mismo snapshot"):
+    with pytest.raises(ValueError, match="manuscrito cambió"):
         FindingDrivenBlockEditPass(
             pass_id="pass.fix-repetition",
             finding=finding,

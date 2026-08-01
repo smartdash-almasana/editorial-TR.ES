@@ -111,24 +111,25 @@ class FindingDrivenBlockEditPass(BaseModel, EditorialPass):
             work.editorial_id,
             work.work_id,
             normalized_branch,
-            work.version,
         )
         finding_scope = (
             self.finding.tenant_id,
             self.finding.editorial_id,
             self.finding.work_id,
             self.finding.branch,
-            self.finding.source_version,
         )
         decision_scope = (
             self.decision.tenant_id,
             self.decision.editorial_id,
             self.decision.work_id,
             self.decision.branch,
-            self.decision.source_version,
         )
         if work_scope != finding_scope or work_scope != decision_scope:
-            raise ValueError("Work, ReviewFinding y FindingDecision deben referir al mismo snapshot editorial.")
+            raise ValueError("Work, ReviewFinding y FindingDecision deben pertenecer al mismo ámbito editorial.")
+        if self.finding.source_version != self.decision.source_version:
+            raise ValueError("ReviewFinding y FindingDecision deben referir a la misma revisión del manuscrito.")
+        if work.manuscript_version != self.finding.source_version:
+            raise ValueError("El manuscrito cambió después del ReviewFinding aceptado.")
 
         block = work.expression_graph.get_block(self.finding.target_id)
         if block is None:

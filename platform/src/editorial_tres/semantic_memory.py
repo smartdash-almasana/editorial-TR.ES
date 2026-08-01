@@ -46,7 +46,7 @@ class MemoryRef(BaseModel):
 
 
 class WorkMemoryProjection(BaseModel):
-    """Non-authoritative semantic projection over one exact Work version."""
+    """Non-authoritative semantic projection over one material manuscript revision."""
 
     tenant_id: TenantId
     editorial_id: EditorialId
@@ -66,7 +66,7 @@ class WorkMemoryProjection(BaseModel):
             tenant_id=work.tenant_id,
             editorial_id=work.editorial_id,
             work_id=work.work_id,
-            source_version=work.version,
+            source_version=work.manuscript_version,
             refs=refs,
         )
 
@@ -150,8 +150,8 @@ class MemoryRetriever:
     def _validate_scope(work: Work, memory: WorkMemoryProjection) -> None:
         if (memory.tenant_id, memory.editorial_id, memory.work_id) != (work.tenant_id, work.editorial_id, work.work_id):
             raise ValueError("La memoria no pertenece al mismo ámbito que Work.")
-        if memory.source_version != work.version:
-            raise ValueError("La memoria está obsoleta respecto de la versión canónica de Work.")
+        if memory.source_version != work.manuscript_version:
+            raise ValueError("La memoria está obsoleta respecto de la revisión material del manuscrito.")
 
     @staticmethod
     def _searchable_text(work: Work, ref: MemoryRef) -> str:
@@ -247,7 +247,7 @@ class ContextBuilder:
             tenant_id=work.tenant_id,
             editorial_id=work.editorial_id,
             work_id=work.work_id,
-            source_version=work.version,
+            source_version=work.manuscript_version,
             purpose=purpose,
             editorial_context=editorial_context,
             author_context=author_context,
@@ -279,7 +279,7 @@ class ContextBuilder:
 
 
 class PreparedEditorialOperation(BaseModel):
-    """Context-bound operation over one exact canonical Work snapshot."""
+    """Context-bound operation over one material manuscript revision."""
 
     context: PassMemory
 
@@ -290,9 +290,9 @@ class PreparedEditorialOperation(BaseModel):
             work.tenant_id,
             work.editorial_id,
             work.work_id,
-            work.version,
+            work.manuscript_version,
         ):
-            raise ValueError("PassMemory no corresponde al snapshot canónico actual de Work.")
+            raise ValueError("PassMemory no corresponde a la revisión material actual del manuscrito.")
 
     def review(self, reviewer: Reviewer, work: Work, branch: str = "main") -> Tuple[ReviewFinding, ...]:
         self._validate_work(work)

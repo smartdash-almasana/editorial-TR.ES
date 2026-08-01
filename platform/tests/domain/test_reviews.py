@@ -55,7 +55,7 @@ def test_reviewer_returns_structured_finding_without_mutating_work():
     assert finding.reviewer_id == "reviewer.repetition"
     assert finding.finding_type == "expression.repeated_phrase"
     assert finding.target_id == "block-1"
-    assert finding.source_version == work.version
+    assert finding.source_version == work.manuscript_version
     assert finding.evidence == "vida"
     assert work.model_dump(mode="python") == before
 

@@ -80,8 +80,6 @@ class RecordReviewFindingCommand(_Command):
         )
         if scope != finding_scope:
             raise ValueError("El comando y el finding deben pertenecer al mismo ámbito editorial.")
-        if self.expected_version != self.finding.source_version:
-            raise ValueError("El finding debe registrarse sobre la misma versión que diagnosticó.")
         return self
 
 

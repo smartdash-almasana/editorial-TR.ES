@@ -4,6 +4,7 @@ import pytest
 
 from editorial_tres.application.commands import (
     AddContentBlockCommand,
+    ApplyApprovedPatchCommand,
     CreateWorkCommand,
     DecideReviewFindingCommand,
     EditContentBlockCommand,
@@ -11,6 +12,7 @@ from editorial_tres.application.commands import (
 )
 from editorial_tres.application.handlers import (
     AddContentBlockHandler,
+    ApplyApprovedPatchHandler,
     CreateWorkHandler,
     DecideReviewFindingHandler,
     EditContentBlockHandler,
@@ -19,6 +21,8 @@ from editorial_tres.application.handlers import (
 )
 from editorial_tres.application.projections import CurrentWorkProjection
 from editorial_tres.composition import compose_application
+from editorial_tres.domain.approvals import ApprovalGate
+from editorial_tres.domain.editorial_passes import FindingDrivenBlockEditPass
 from editorial_tres.domain.finding_decisions import FindingDecision
 from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
 from editorial_tres.domain.reviews import RepeatedPhraseReviewer
@@ -112,6 +116,7 @@ def test_recorded_finding_replays_without_mutating_manuscript():
     history = get_review_history(store, TENANT, EDITORIAL, WORK)
     assert result.version == 3
     assert after.version == 3
+    assert after.manuscript_version == before.manuscript_version == 2
     assert after.expression_graph == before.expression_graph
     assert history.get_finding(finding.finding_id) == finding
     assert history.unresolved_findings() == (finding,)
@@ -124,8 +129,11 @@ def test_decision_is_persisted_and_replayed_against_existing_finding():
 
     result = DecideReviewFindingHandler(store, projection).handle(decision_command(decision))
 
+    current_work = Work.replay(store.get_events(TENANT, EDITORIAL, WORK))
     history = get_review_history(store, TENANT, EDITORIAL, WORK)
     assert result.version == 4
+    assert current_work.version == 4
+    assert current_work.manuscript_version == 2
     assert history.get_decision(finding.finding_id) == decision
     assert history.unresolved_findings() == ()
 
@@ -220,3 +228,59 @@ def test_sqlite_composition_preserves_review_history_after_restart(tmp_path):
         history = restarted.review_history(TENANT, EDITORIAL, WORK)
         assert history.get_finding(finding.finding_id) == finding
         assert history.get_decision(finding.finding_id).status == "accepted"
+
+
+def test_persisted_accepted_finding_can_still_produce_patch_on_current_work():
+    store, projection, finding = setup_work()
+    RecordReviewFindingHandler(store, projection).handle(record_command(finding))
+    decision = accepted_decision(finding)
+    DecideReviewFindingHandler(store, projection).handle(decision_command(decision))
+
+    current_work = Work.replay(store.get_events(TENANT, EDITORIAL, WORK))
+    editorial_pass = FindingDrivenBlockEditPass(
+        pass_id="pass.fix-repetition",
+        finding=finding,
+        decision=decision,
+        replacement_content="eco final",
+    )
+
+    patch = editorial_pass.propose(current_work)
+
+    assert current_work.version == 4
+    assert current_work.manuscript_version == 2
+    assert finding.source_version == current_work.manuscript_version
+    assert decision.source_version == current_work.manuscript_version
+    assert patch.source_version == current_work.version
+    assert patch.operations[0].block_id == "block-1"
+    assert patch.operations[0].before_content == "eco eco final"
+    assert patch.operations[0].after_content == "eco final"
+
+    approval = ApprovalGate.for_patch(
+        patch,
+        gate_id="gate-finding-1",
+        required_role="editor",
+    ).approve(
+        actor_id=EDITOR,
+        reason="Aplicar corrección aceptada.",
+        decided_at=datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc),
+    )
+    result = ApplyApprovedPatchHandler(store, projection).handle(
+        ApplyApprovedPatchCommand(
+            command_id="apply-finding-patch",
+            idempotency_key="apply-finding-patch",
+            tenant_id=TENANT,
+            editorial_id=EDITORIAL,
+            work_id=WORK,
+            actor_id=EDITOR,
+            branch="main",
+            expected_version=patch.source_version,
+            patch=patch,
+            approval=approval,
+        )
+    )
+
+    rebuilt = Work.replay(store.get_events(TENANT, EDITORIAL, WORK))
+    assert result.version == 5
+    assert rebuilt.version == 5
+    assert rebuilt.manuscript_version == 3
+    assert rebuilt.expression_graph.get_block("block-1").content == "eco final"

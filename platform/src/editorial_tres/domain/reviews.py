@@ -15,7 +15,7 @@ FindingSeverity = Literal["info", "warning", "error"]
 
 
 class ReviewFinding(BaseModel):
-    """Immutable diagnostic result produced by a reviewer over one Work version."""
+    """Immutable diagnostic result bound to one material manuscript revision."""
 
     finding_id: str
     reviewer_id: str
@@ -103,7 +103,7 @@ class RepeatedPhraseReviewer(BaseModel, Reviewer):
                     work.editorial_id.value,
                     work.work_id.value,
                     normalized_branch,
-                    str(work.version),
+                    str(work.manuscript_version),
                     block.id,
                     self.phrase,
                     str(occurrences),
@@ -119,7 +119,7 @@ class RepeatedPhraseReviewer(BaseModel, Reviewer):
                     editorial_id=work.editorial_id,
                     work_id=work.work_id,
                     branch=normalized_branch,
-                    source_version=work.version,
+                    source_version=work.manuscript_version,
                     target_id=block.id,
                     severity=self.severity,
                     evidence=self.phrase,
@@ -193,7 +193,7 @@ class VoiceDriftReviewer(BaseModel, Reviewer):
             if len(matched) < self.minimum_markers:
                 continue
             evidence = " | ".join(matched)
-            fingerprint = "|".join((self.reviewer_id, work.work_id.value, normalized_branch, str(work.version), block.id, evidence))
+            fingerprint = "|".join((self.reviewer_id, work.work_id.value, normalized_branch, str(work.manuscript_version), block.id, evidence))
             findings.append(ReviewFinding(
                 finding_id=f"finding-{hashlib.sha256(fingerprint.encode()).hexdigest()[:16]}",
                 reviewer_id=self.reviewer_id,
@@ -202,7 +202,7 @@ class VoiceDriftReviewer(BaseModel, Reviewer):
                 editorial_id=work.editorial_id,
                 work_id=work.work_id,
                 branch=normalized_branch,
-                source_version=work.version,
+                source_version=work.manuscript_version,
                 target_id=block.id,
                 severity=self.severity,
                 evidence=evidence,
@@ -281,7 +281,7 @@ class ContinuityReviewer(BaseModel, Reviewer):
                 if first_established[0] >= first_conflict[0]:
                     continue
                 evidence = f"{first_established[1]} → {first_conflict[1]}"
-                fingerprint = "|".join((self.reviewer_id, rule.rule_id, work.work_id.value, normalized_branch, str(work.version), block.id, evidence))
+                fingerprint = "|".join((self.reviewer_id, rule.rule_id, work.work_id.value, normalized_branch, str(work.manuscript_version), block.id, evidence))
                 findings.append(ReviewFinding(
                     finding_id=f"finding-{hashlib.sha256(fingerprint.encode()).hexdigest()[:16]}",
                     reviewer_id=self.reviewer_id,
@@ -290,7 +290,7 @@ class ContinuityReviewer(BaseModel, Reviewer):
                     editorial_id=work.editorial_id,
                     work_id=work.work_id,
                     branch=normalized_branch,
-                    source_version=work.version,
+                    source_version=work.manuscript_version,
                     target_id=block.id,
                     severity=self.severity,
                     evidence=evidence,
@@ -331,7 +331,7 @@ class StructuralReviewer(BaseModel, Reviewer):
                 if occurrences < 2:
                     continue
                 evidence = paragraph[:240]
-                fingerprint = "|".join((self.reviewer_id, "duplicate", work.work_id.value, normalized_branch, str(work.version), block.id, evidence, str(occurrences)))
+                fingerprint = "|".join((self.reviewer_id, "duplicate", work.work_id.value, normalized_branch, str(work.manuscript_version), block.id, evidence, str(occurrences)))
                 findings.append(ReviewFinding(
                     finding_id=f"finding-{hashlib.sha256(fingerprint.encode()).hexdigest()[:16]}",
                     reviewer_id=self.reviewer_id,
@@ -340,7 +340,7 @@ class StructuralReviewer(BaseModel, Reviewer):
                     editorial_id=work.editorial_id,
                     work_id=work.work_id,
                     branch=normalized_branch,
-                    source_version=work.version,
+                    source_version=work.manuscript_version,
                     target_id=block.id,
                     severity="error",
                     evidence=evidence,
@@ -351,7 +351,7 @@ class StructuralReviewer(BaseModel, Reviewer):
                 occurrences = block.content.casefold().count(phrase.casefold())
                 if occurrences < self.minimum_thematic_occurrences:
                     continue
-                fingerprint = "|".join((self.reviewer_id, "theme", work.work_id.value, normalized_branch, str(work.version), block.id, phrase, str(occurrences)))
+                fingerprint = "|".join((self.reviewer_id, "theme", work.work_id.value, normalized_branch, str(work.manuscript_version), block.id, phrase, str(occurrences)))
                 findings.append(ReviewFinding(
                     finding_id=f"finding-{hashlib.sha256(fingerprint.encode()).hexdigest()[:16]}",
                     reviewer_id=self.reviewer_id,
@@ -360,7 +360,7 @@ class StructuralReviewer(BaseModel, Reviewer):
                     editorial_id=work.editorial_id,
                     work_id=work.work_id,
                     branch=normalized_branch,
-                    source_version=work.version,
+                    source_version=work.manuscript_version,
                     target_id=block.id,
                     severity=self.severity,
                     evidence=phrase,
@@ -463,7 +463,7 @@ class RhythmReviewer(BaseModel, Reviewer):
                         work.editorial_id.value,
                         work.work_id.value,
                         normalized_branch,
-                        str(work.version),
+                        str(work.manuscript_version),
                         block.id,
                         evidence,
                     )
@@ -477,7 +477,7 @@ class RhythmReviewer(BaseModel, Reviewer):
                         editorial_id=work.editorial_id,
                         work_id=work.work_id,
                         branch=normalized_branch,
-                        source_version=work.version,
+                        source_version=work.manuscript_version,
                         target_id=block.id,
                         severity=self.severity,
                         evidence=evidence,

@@ -183,9 +183,6 @@ class ApplyApprovedPatchHandler(_Handler):
         )
 
 
-_MANUSCRIPT_MUTATION_EVENTS = {"content_block.added", "content_block.edited"}
-
-
 class RecordReviewFindingHandler(_Handler):
     """Persist one diagnostic finding without changing manuscript content."""
 
@@ -204,6 +201,11 @@ class RecordReviewFindingHandler(_Handler):
         if command.expected_version != work.version:
             raise ConcurrencyError(
                 f"Se esperaba versión {work.version}, se recibió {command.expected_version}."
+            )
+        if command.finding.source_version != work.manuscript_version:
+            raise ConcurrencyError(
+                f"El finding fue producido sobre la revisión material {command.finding.source_version}, "
+                f"pero el manuscrito está en la revisión {work.manuscript_version}."
             )
 
         history = ReviewHistory.replay(events)
@@ -254,14 +256,10 @@ class DecideReviewFindingHandler(_Handler):
         if command.decision.source_version != finding.source_version:
             raise ValueError("La decisión no corresponde a la versión fuente del finding.")
 
-        for event in events:
-            if (
-                event.aggregate_version > finding.source_version
-                and event.event_type in _MANUSCRIPT_MUTATION_EVENTS
-            ):
-                raise ConcurrencyError(
-                    f"El finding '{finding.finding_id}' quedó stale por una mutación posterior del manuscrito."
-                )
+        if work.manuscript_version != finding.source_version:
+            raise ConcurrencyError(
+                f"El finding '{finding.finding_id}' quedó stale por una mutación posterior del manuscrito."
+            )
 
         event = create_review_finding_decided_event(
             event_id=f"evt-{uuid.uuid4().hex[:16]}",

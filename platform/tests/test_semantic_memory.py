@@ -74,7 +74,7 @@ def test_work_memory_projection_keeps_versioned_references_not_manuscript_copies
 
     memory = WorkMemoryProjection.from_work(work)
 
-    assert memory.source_version == work.version
+    assert memory.source_version == work.manuscript_version
     assert {(ref.kind, ref.target_id) for ref in memory.refs} == {
         ("expression_block", "block-1"),
         ("knowledge_node", "concept-1"),
@@ -98,7 +98,7 @@ def test_context_builder_resolves_minimum_selected_context_from_canonical_work()
         ],
     )
 
-    assert context.source_version == work.version
+    assert context.source_version == work.manuscript_version
     assert context.purpose == "revisar continuidad local"
     assert [block.id for block in context.expression_blocks] == ["block-1"]
     assert [node.id for node in context.narrative_nodes] == ["chapter-1"]
@@ -135,7 +135,7 @@ def test_memory_retriever_selects_relevant_refs_without_changing_authority():
     )
 
     assert refs == [MemoryRef(kind="knowledge_node", target_id="concept-1")]
-    assert memory.source_version == work.version
+    assert memory.source_version == work.manuscript_version
 
 
 def test_context_builder_combines_separate_editorial_author_and_work_context_with_budgets():
@@ -176,7 +176,7 @@ def test_context_builder_combines_separate_editorial_author_and_work_context_wit
     assert [block.id for block in context.expression_blocks] == ["block-1"]
 
 
-def test_semantic_context_service_binds_reviewer_and_pass_to_same_work_snapshot():
+def test_semantic_context_service_binds_operations_to_manuscript_revision():
     work = _work()
     memory = WorkMemoryProjection.from_work(work)
     prepared = SemanticContextService().prepare(
@@ -204,10 +204,19 @@ def test_semantic_context_service_binds_reviewer_and_pass_to_same_work_snapshot(
     assert patch.source_version == work.version
     assert patch.operations[0].block_id == "block-1"
 
-    stale_work = _work(version=2)
+    stream_advanced_work = work.model_copy(update={"version": work.version + 1})
+    stream_patch = prepared.propose(editorial_pass, stream_advanced_work)
+    assert stream_patch.source_version == stream_advanced_work.version
+
+    stale_work = work.model_copy(
+        update={
+            "version": work.version + 1,
+            "manuscript_version": work.manuscript_version + 1,
+        }
+    )
     try:
         prepared.propose(editorial_pass, stale_work)
     except ValueError as exc:
-        assert "snapshot" in str(exc)
+        assert "revisión material" in str(exc)
     else:
-        raise AssertionError("PassMemory no debe ejecutarse sobre una versión distinta de Work.")
+        raise AssertionError("PassMemory no debe ejecutarse sobre una revisión material distinta.")
