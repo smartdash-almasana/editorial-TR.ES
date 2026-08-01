@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "editorial.tres/cycle.schema.v1",
+  "title": "Editorial TR.ES Capability Cycle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "capability",
+    "objective",
+    "status",
+    "allowed_paths",
+    "forbidden_paths",
+    "change_budget",
+    "dependencies",
+    "providers",
+    "verification",
+    "permissions",
+    "deliverables",
+    "completion"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["editorial.tres/cycle-v1"]
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z]+-[0-9]+$",
+      "minLength": 3
+    },
+    "capability": {
+      "type": "string",
+      "pattern": "^editorial\\.[a-z0-9][a-z0-9.-]*$",
+      "minLength": 3
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "ACTIVE", "CLOSED_PASS", "PARTIAL", "BLOCKED"]
+    },
+    "allowed_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "forbidden_paths": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "change_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_production_files",
+        "max_new_dependencies",
+        "domain_schema_changes",
+        "event_schema_changes"
+      ],
+      "properties": {
+        "max_production_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_new_dependencies": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "domain_schema_changes": {
+          "type": "boolean"
+        },
+        "event_schema_changes": {
+          "type": "boolean"
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "providers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "verification": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "cwd", "command"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cwd": {
+            "type": "string",
+            "minLength": 1
+          },
+          "command": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "push"],
+      "properties": {
+        "commit": {
+          "type": "boolean"
+        },
+        "push": {
+          "type": "boolean"
+        }
+      }
+    },
+    "deliverables": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requires_all_verification",
+        "evidence_update",
+        "advance_next_cycle"
+      ],
+      "properties": {
+        "requires_all_verification": {
+          "type": "boolean"
+        },
+        "evidence_update": {
+          "type": "string",
+          "enum": ["manual"]
+        },
+        "advance_next_cycle": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

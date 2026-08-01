@@ -1,0 +1,124 @@
+schema_version: 1
+task_id: GR-0
+status: active
+mode: implementation
+capability: editorial.global-repetition
+cycle_file: capabilities/global-repetition/cycles/GR-0.yaml
+objective: establish_declarative_capability_harness
+
+allowed_paths:
+  - capabilities/schemas/**
+  - capabilities/global-repetition/**
+  - ops/ACTIVE_TASK.yaml
+  - tools/verify_active_task.py
+  - platform/tests/test_active_task_guard.py
+
+forbidden_paths:
+  - AGENTS.md
+  - docs/**
+  - platform/src/editorial_tres/domain/**
+  - platform/src/editorial_tres/application/**
+  - platform/src/editorial_tres/infrastructure/**
+  - platform/src/editorial_tres/plugin_runtime.py
+  - platform/src/editorial_tres/capability_factory.py
+  - plugins/**
+  - projects/**
+  - constitution/**
+  - .github/**
+  - platform/pyproject.toml
+
+allowed_new_dependencies: []
+allowed_providers: []
+
+tests:
+  - name: active-task-guard-focal
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - tests/test_active_task_guard.py
+      - -q
+  - name: platform-suite
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - -q
+  - name: platform-suite-strict
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - -W
+      - error
+      - -q
+  - name: git-diff-check
+    cwd: .
+    command:
+      - git
+      - diff
+      - --check
+
+commit_authorized: true
+push_authorized: true
+
+baseline:
+  head: 68e12c85f9c77a38fc4b8536a97129113c35c281
+  preexisting_changes:
+    - path: AGENTS.md
+      status: '??'
+      sha256: ad8e561bc069ff4b92fb9f90d0c7cc64ba881bf6f2327ab8c7266356d714d60c
+    - path: platform/src/editorial_tres/capability_factory.py
+      status: ' M'
+      sha256: d48ce16dea0a952ea56e1a6b802c7eba8f06c9f4700f4515dd8c8a77e4ae7568
+    - path: platform/src/editorial_tres/domain/editorial_passes.py
+      status: ' M'
+      sha256: 1727d024b70c95325546e61a5e41618123469ede97a61a6e8c2fa7a94065476f
+    - path: platform/src/editorial_tres/domain/reviews.py
+      status: ' M'
+      sha256: 292b7cf85872db503f95dc515fdc5a63cfd91bfb04e73ec9ab4476ed4a51a9e2
+    - path: platform/tests/domain/test_editorial_passes.py
+      status: ' M'
+      sha256: 9e35237cdaab50d61cd61b67c1a75f47ec221df690c2031a3e186255801c20e8
+    - path: platform/tests/domain/test_literary_reviewers.py
+      status: ' M'
+      sha256: 3e6d596bb06747b18f08f43aee81be909afbc8ba10d4d686e222a12e150a2056
+    - path: platform/tests/test_capability_factory.py
+      status: ' M'
+      sha256: b93ad4a7eeafaedb4605717062dec41ec0be59697a55d8864ea7ffce230580d7
+    - path: docs/architecture/LLM_GLOBAL_REPETITION_REVIEW_V1.md
+      status: '??'
+      sha256: 9c7c8632b2b6f6de8a22405cd6606f02113f37b8c9a53609647679dd17084e00
+    - path: platform/src/editorial_tres/domain/llm_repetition.py
+      status: '??'
+      sha256: bbe379dc61e01594edb45ae670cbf44386af1725fa2bdd394a1398f6f8ab6fe1
+    - path: platform/src/editorial_tres/infrastructure/gemini_structured_llm.py
+      status: '??'
+      sha256: 36d814d067e97368796e7495cecf749e5df5f763ad625bfb15f4be75bed05d2b
+    - path: platform/tests/domain/test_llm_repetition_reviewer.py
+      status: '??'
+      sha256: ce9b0462a88e95d4b86ae46c92a766e14d6657ce4826ba7547459d7ead66611e
+    - path: platform/tests/infrastructure/test_gemini_structured_llm.py
+      status: '??'
+      sha256: 42bb37c37eb60e63b55b8169dac463228348dde43e05c4944ac3689d079e4e65
+    - path: platform/tests/lab_experiment_001_casa_del_rio.py
+      status: '??'
+      sha256: 48ca529e1198f1c86e9a1a8c256d9579ca9728dc8e32d9073282b797e049e1f7
+    - path: platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
+      status: '??'
+      sha256: f8cb2bd6adb256d42345691fdcaa028b35a329618e4a683ea700a7af6723d47b
+    - path: platform/tests/lab_real_text_002_el_perro_mas_listo.py
+      status: '??'
+      sha256: feab13ea4a6e5f244375256c3f2e4a9d3c76703018048db64f44fa70fe2670d3
+    - path: platform/tests/lab_real_text_003_corazon_piedra_verde.py
+      status: '??'
+      sha256: a43ebfb802446d2a37c807b95383346e4f0c82047967cccf48f537271e1ecaf2
+    - path: plugins/reviewers/llm-global-repetition/SKILL.md
+      status: '??'
+      sha256: 372cdc260ade202ecb0ae5b0c62f9136a09e0f4206e11c0c45f646184f454450
+    - path: plugins/reviewers/llm-global-repetition/plugin.yaml
+      status: '??'
+      sha256: bfd11edf6d3cbecab121e1bece47763cebeac2f81cffdc07cb79f88087985c53

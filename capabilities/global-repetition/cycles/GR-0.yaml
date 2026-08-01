@@ -1,0 +1,83 @@
+schema_version: editorial.tres/cycle-v1
+id: GR-0
+capability: editorial.global-repetition
+objective: establish_declarative_capability_harness
+status: ACTIVE
+
+allowed_paths:
+  - capabilities/schemas/**
+  - capabilities/global-repetition/**
+  - ops/ACTIVE_TASK.yaml
+  - tools/verify_active_task.py
+  - platform/tests/test_active_task_guard.py
+
+forbidden_paths:
+  - AGENTS.md
+  - docs/**
+  - platform/src/editorial_tres/domain/**
+  - platform/src/editorial_tres/application/**
+  - platform/src/editorial_tres/infrastructure/**
+  - platform/src/editorial_tres/plugin_runtime.py
+  - platform/src/editorial_tres/capability_factory.py
+  - plugins/**
+  - projects/**
+  - constitution/**
+  - .github/**
+  - platform/pyproject.toml
+
+change_budget:
+  max_production_files: 0
+  max_new_dependencies: 0
+  domain_schema_changes: false
+  event_schema_changes: false
+
+dependencies: []
+providers: []
+
+verification:
+  - name: active-task-guard-focal
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - tests/test_active_task_guard.py
+      - -q
+  - name: platform-suite
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - -q
+  - name: platform-suite-strict
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - -W
+      - error
+      - -q
+  - name: git-diff-check
+    cwd: .
+    command:
+      - git
+      - diff
+      - --check
+
+permissions:
+  commit: false
+  push: false
+
+deliverables:
+  - capability schemas
+  - global repetition declaration
+  - GR-0 cycle
+  - cycle resolution in active-task guard
+  - focused tests
+
+completion:
+  requires_all_verification: true
+  evidence_update: manual
+  advance_next_cycle: false
