@@ -1,8 +1,8 @@
 """Expression graph and immutable content blocks."""
-from types import MappingProxyType
 from typing import Any, Mapping, Optional, List
 from pydantic import field_serializer, BaseModel, Field, field_validator
 from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
+from editorial_tres.domain.immutable_values import deep_freeze, deep_to_jsonable
 from editorial_tres.exceptions import DuplicateNodeError, GraphCycleError, MissingParentNodeError
 
 ALLOWED_BLOCK_TYPES = {"paragraph", "heading", "dialogue", "quote", "poem", "note"}
@@ -22,11 +22,11 @@ class ContentBlock(BaseModel):
     @field_validator("metadata")
     @classmethod
     def _freeze_metadata(cls, value: Mapping[str, Any]) -> Mapping[str, Any]:
-        return MappingProxyType(dict(value))
+        return deep_freeze(value)
 
     @field_serializer("metadata", when_used="json")
     def _serialize_metadata(self, value: Mapping[str, Any]) -> dict[str, Any]:
-        return dict(value)
+        return deep_to_jsonable(value)
 
     @field_validator("block_type")
     @classmethod
@@ -52,10 +52,10 @@ class ExpressionGraph(BaseModel):
     @field_validator("blocks")
     @classmethod
     def _freeze_blocks(cls, value: Mapping[str, ContentBlock]) -> Mapping[str, ContentBlock]:
-        return MappingProxyType(dict(value))
+        return deep_freeze(value)
 
     @field_serializer("blocks")
-    def _serialize_blocks(self, value): return dict(value)
+    def _serialize_blocks(self, value): return deep_to_jsonable(value)
     def add_block(self, block: ContentBlock) -> "ExpressionGraph":
         if block.id in self.blocks:
             raise DuplicateNodeError(f"El bloque con ID '{block.id}' ya existe en el grafo de expresión.")

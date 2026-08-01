@@ -65,8 +65,9 @@ El Corte 1 queda cerrado. La evidencia final registró `10 passed` en focales, `
 
 ## Corte 2 — Operaciones estructurales mínimas de Patch
 
-**Estado:** `CLOSED_PASS`
-**Evidencia de cierre:** `62 passed` en focales, `256 passed` en suite completa y espacios finales reportados corregidos; `git diff --check` debe reconfirmarse antes del commit.
+**Estado:** `INTEGRITY_CORRECTION_LOCAL_PASS_AWAITING_CI`
+**Base preservada:** `cb16ff3` mantiene el catálogo estructural completo. Una auditoría posterior reabrió únicamente la frontera de confianza entre `Patch` y `ApprovalGate` y la inmutabilidad/serialización de metadata anidada.
+**Evidencia local:** `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error` y `git diff --check` limpio. Resta publicar y verificar el workflow de GitHub Actions.
 
 ### Objetivo
 
@@ -82,6 +83,19 @@ Permitir curado estructural gobernado sin abandonar `Patch → ApprovalGate → 
 6. **Implementado:** validar todas las precondiciones antes de persistir.
 7. **Implementado:** aplicar el patch como un único commit atómico.
 8. **Implementado:** invalidar derivados afectados.
+
+### Corrección de integridad posterior
+
+Implementada, validada localmente y pendiente únicamente de CI publicado:
+
+- congelación recursiva centralizada de valores anidados;
+- conversión recursiva y determinística en fronteras JSON/SQLite;
+- `patch_schema_version` incluido en la identidad material;
+- SHA-256 canónico sobre el Patch completo y sus operaciones ordenadas;
+- `ApprovalGate` ligado a `patch_digest`;
+- rechazo seguro de aprobaciones legacy sin digest;
+- defensa redundante en comando y handler antes de idempotencia o persistencia;
+- CI para suite normal, suite estricta con warnings como errores y control de whitespace.
 
 ### Criterios de cierre
 

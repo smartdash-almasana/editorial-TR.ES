@@ -1092,3 +1092,77 @@ def test_delete_block_rejects_incoming_dependency_without_persisting():
     assert events_after == events_before
     assert head_after.commit_id == head_before.commit_id
     assert rebuilt.expression_graph.get_block("block-1") == block
+
+
+
+def test_approved_patch_digest_rejects_substituted_patch_without_persisting() -> None:
+    store, projection = setup_work()
+    approved, gate = approved_patch()
+    substituted = Patch(
+        patch_id=approved.patch_id,
+        pass_id=approved.pass_id,
+        tenant_id=approved.tenant_id,
+        editorial_id=approved.editorial_id,
+        work_id=approved.work_id,
+        branch=approved.branch,
+        source_version=approved.source_version,
+        operations=(
+            PatchOperation(
+                block_id="block-1",
+                before_content="Antes",
+                after_content="NO aprobado",
+            ),
+        ),
+    )
+    events_before = tuple(store.get_events(TENANT, EDITORIAL, WORK))
+    head_before = store.get_head_commit(TENANT, EDITORIAL, WORK, "main")
+
+    with pytest.raises(ValueError, match="contenido material exacto"):
+        command(substituted, gate, key="substituted-command")
+
+    forged_command = ApplyApprovedPatchCommand.model_construct(
+        command_id="cmd-substituted-handler",
+        idempotency_key="substituted-handler",
+        tenant_id=TENANT,
+        editorial_id=EDITORIAL,
+        work_id=WORK,
+        actor_id=ACTOR,
+        branch="main",
+        expected_version=substituted.source_version,
+        patch=substituted,
+        approval=gate,
+    )
+    with pytest.raises(ValueError, match="contenido material exacto"):
+        ApplyApprovedPatchHandler(store, projection).handle(forged_command)
+
+    events_after = tuple(store.get_events(TENANT, EDITORIAL, WORK))
+    head_after = store.get_head_commit(TENANT, EDITORIAL, WORK, "main")
+    rebuilt = Work.replay(events_after)
+    assert events_after == events_before
+    assert head_after.commit_id == head_before.commit_id
+    assert rebuilt.expression_graph.get_block("block-1").content == "Antes"
+
+
+def test_legacy_approval_without_digest_is_rejected_before_persistence() -> None:
+    store, _ = setup_work()
+    patch, _ = approved_patch()
+    legacy_gate = ApprovalGate(
+        gate_id="gate-legacy-application",
+        patch_id=patch.patch_id,
+        tenant_id=patch.tenant_id,
+        editorial_id=patch.editorial_id,
+        work_id=patch.work_id,
+        branch=patch.branch,
+        source_version=patch.source_version,
+        required_role="editor",
+    ).approve(
+        actor_id=ACTOR,
+        reason="Aprobación histórica sin digest.",
+        decided_at=datetime(2026, 8, 1, tzinfo=timezone.utc),
+    )
+    events_before = tuple(store.get_events(TENANT, EDITORIAL, WORK))
+
+    with pytest.raises(ValueError, match="nueva aprobación"):
+        command(patch, legacy_gate, key="legacy")
+
+    assert tuple(store.get_events(TENANT, EDITORIAL, WORK)) == events_before

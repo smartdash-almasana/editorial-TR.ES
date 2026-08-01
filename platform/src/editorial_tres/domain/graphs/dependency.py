@@ -1,7 +1,8 @@
 """Dependency graph for incremental invalidation of derived editorial resources."""
 from typing import Any, List, Mapping, Optional, Tuple
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
+from editorial_tres.domain.immutable_values import deep_freeze, deep_to_jsonable
 from editorial_tres.exceptions import DuplicateNodeError
 
 FRESH = "fresh"
@@ -19,6 +20,15 @@ class ResourceDependency(BaseModel):
     status: str = FRESH
     metadata: Mapping[str, Any] = Field(default_factory=dict)
     model_config = {"frozen": True}
+
+    @field_validator("metadata")
+    @classmethod
+    def _freeze_metadata(cls, value: Mapping[str, Any]) -> Mapping[str, Any]:
+        return deep_freeze(value)
+
+    @field_serializer("metadata")
+    def _serialize_metadata(self, value: Mapping[str, Any]) -> dict[str, Any]:
+        return deep_to_jsonable(value)
 
     @field_validator("status")
     @classmethod

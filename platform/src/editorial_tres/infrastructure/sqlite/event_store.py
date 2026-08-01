@@ -18,6 +18,7 @@ from editorial_tres.domain.events import (
     ReviewFindingRecorded,
 )
 from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
+from editorial_tres.domain.immutable_values import deep_to_jsonable
 from editorial_tres.exceptions import (
     ConcurrencyError,
     DuplicateCommitError,
@@ -277,7 +278,7 @@ class SQLiteEventStore:
                 ),
             )
             for position, event in enumerate(commit.events):
-                payload = event.model_dump(mode="json")["payload"]
+                payload = deep_to_jsonable(event.payload)
                 self._connection.execute(
                     "INSERT INTO events (event_id, commit_id, event_position, event_type, "
                     "tenant_id, editorial_id, work_id, aggregate_version, occurred_at, actor_id, "

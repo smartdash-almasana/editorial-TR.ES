@@ -22,6 +22,7 @@ class ApprovalGate(BaseModel):
     work_id: WorkId
     branch: str = "main"
     source_version: int
+    patch_digest: Optional[str] = None
     required_role: str
     status: ApprovalStatus = "pending"
     decided_by: Optional[ActorId] = None
@@ -36,6 +37,16 @@ class ApprovalGate(BaseModel):
         if not value or not value.strip():
             raise ValueError("El valor es obligatorio.")
         return value.strip()
+
+    @field_validator("patch_digest")
+    @classmethod
+    def _valid_patch_digest(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        if len(normalized) != 64 or any(character not in "0123456789abcdef" for character in normalized):
+            raise ValueError("patch_digest debe ser un SHA-256 hexadecimal de 64 caracteres.")
+        return normalized
 
     @model_validator(mode="after")
     def _decision_consistency(self) -> "ApprovalGate":
@@ -62,6 +73,7 @@ class ApprovalGate(BaseModel):
             work_id=patch.work_id,
             branch=patch.branch,
             source_version=patch.source_version,
+            patch_digest=patch.digest(),
             required_role=required_role,
         )
 

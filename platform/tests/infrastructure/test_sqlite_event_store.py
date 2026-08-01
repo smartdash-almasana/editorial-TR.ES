@@ -538,3 +538,71 @@ def test_structural_patch_catalog_replays_exactly_after_sqlite_reopen(tmp_path):
     assert moved.parent_id == "block-3"
     assert moved.position == 0
     assert moved.content == "Bloque móvil"
+
+
+
+def test_nested_patch_metadata_round_trips_through_sqlite_exactly(tmp_path):
+    database_path = tmp_path / "events.sqlite"
+    with SQLiteEventStore(database_path) as store:
+        projection = CurrentWorkProjection()
+        CreateWorkHandler(store, projection).handle(_create_work_command())
+        patch = Patch(
+            patch_id="patch-nested-sqlite",
+            pass_id="pass-integrity",
+            tenant_id=TENANT,
+            editorial_id=EDITORIAL,
+            work_id=WORK,
+            branch="main",
+            source_version=1,
+            operations=(
+                InsertBlockOperation(
+                    block_id="block-nested",
+                    block_type="paragraph",
+                    content="Metadata profundamente inmutable.",
+                    metadata={
+                        "editorial": {
+                            "labels": ["opening", "reviewed"],
+                            "settings": {"visible": True},
+                        }
+                    },
+                ),
+            ),
+        )
+        approval = ApprovalGate.for_patch(
+            patch,
+            gate_id="gate-nested-sqlite",
+            required_role="editor",
+        ).approve(
+            actor_id=ACTOR,
+            reason="Aprobar metadata anidada.",
+            decided_at=datetime(2026, 8, 1, tzinfo=timezone.utc),
+        )
+        ApplyApprovedPatchHandler(store, projection).handle(
+            ApplyApprovedPatchCommand(
+                command_id="cmd-nested-sqlite",
+                idempotency_key="idem-nested-sqlite",
+                tenant_id=TENANT,
+                editorial_id=EDITORIAL,
+                work_id=WORK,
+                actor_id=ACTOR,
+                branch="main",
+                expected_version=1,
+                patch=patch,
+                approval=approval,
+            )
+        )
+
+    with SQLiteEventStore(database_path) as reopened_store:
+        events = reopened_store.get_events(TENANT, EDITORIAL, WORK)
+        replayed = Work.replay(events)
+
+    block = replayed.expression_graph.get_block("block-nested")
+    assert block is not None
+    assert block.metadata["editorial"]["labels"] == ("opening", "reviewed")
+    assert block.metadata["editorial"]["settings"]["visible"] is True
+    assert events[-1].model_dump(mode="json")["payload"]["block"]["metadata"] == {
+        "editorial": {
+            "labels": ["opening", "reviewed"],
+            "settings": {"visible": True},
+        }
+    }

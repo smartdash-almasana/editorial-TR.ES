@@ -1,11 +1,11 @@
 """Replayable review history derived from canonical work events."""
 
-from types import MappingProxyType
 from typing import Mapping, Tuple
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from editorial_tres.domain.events import DomainEvent
+from editorial_tres.domain.immutable_values import deep_freeze, deep_to_jsonable
 from editorial_tres.domain.finding_decisions import FindingDecision
 from editorial_tres.domain.reviews import ReviewFinding
 
@@ -21,7 +21,11 @@ class ReviewHistory(BaseModel):
     @field_validator("findings", "decisions")
     @classmethod
     def _freeze_mapping(cls, value):
-        return MappingProxyType(dict(value))
+        return deep_freeze(value)
+
+    @field_serializer("findings", "decisions")
+    def _serialize_mapping(self, value):
+        return deep_to_jsonable(value)
 
     @classmethod
     def replay(cls, events: list[DomainEvent]) -> "ReviewHistory":

@@ -1,12 +1,16 @@
 """Immutable editorial change proposals."""
 
-from types import MappingProxyType
+from hashlib import sha256
 from typing import Annotated, Any, Literal, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
 from editorial_tres.domain.graphs.expression import ContentBlock
 from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
+from editorial_tres.domain.immutable_values import canonical_json, deep_freeze, deep_to_jsonable
+
+
+PATCH_SCHEMA_VERSION = 1
 
 
 class PatchOperation(BaseModel):
@@ -71,11 +75,11 @@ class InsertBlockOperation(BaseModel):
     @field_validator("metadata")
     @classmethod
     def _freeze_metadata(cls, value: Mapping[str, Any]) -> Mapping[str, Any]:
-        return MappingProxyType(dict(value))
+        return deep_freeze(value)
 
-    @field_serializer("metadata")
+    @field_serializer("metadata", when_used="json")
     def _serialize_metadata(self, value: Mapping[str, Any]) -> dict[str, Any]:
-        return dict(value)
+        return deep_to_jsonable(value)
 
     @model_validator(mode="after")
     def _valid_content_block(self) -> "InsertBlockOperation":
@@ -91,7 +95,7 @@ class InsertBlockOperation(BaseModel):
             position=self.position,
             language=self.language,
             status=self.status,
-            metadata=dict(self.metadata),
+            metadata=deep_to_jsonable(self.metadata),
         )
 
 
@@ -181,6 +185,7 @@ class Patch(BaseModel):
     work_id: WorkId
     branch: str = "main"
     source_version: int = Field(ge=1)
+    patch_schema_version: Literal[1] = PATCH_SCHEMA_VERSION
     operations: Tuple[PatchOperationVariant, ...]
 
     model_config = {"frozen": True}
@@ -203,3 +208,13 @@ class Patch(BaseModel):
         if len(block_ids) != len(set(block_ids)):
             raise ValueError("Un Patch no puede proponer dos operaciones sobre el mismo bloque.")
         return value
+
+    def canonical_payload(self) -> dict[str, Any]:
+        """Return the complete material proposal at the canonical JSON boundary."""
+
+        return deep_to_jsonable(self)
+
+    def digest(self) -> str:
+        """Bind approval to this exact, ordered, schema-versioned proposal."""
+
+        return sha256(canonical_json(self).encode("utf-8")).hexdigest()

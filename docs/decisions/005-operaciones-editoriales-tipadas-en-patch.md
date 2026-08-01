@@ -1,6 +1,6 @@
 # ADR-005 — Operaciones editoriales tipadas dentro de Patch
 
-**Estado:** Aceptado — implementación cerrada (`CLOSED_PASS`)
+**Estado:** Aceptado — corrección de integridad validada localmente, pendiente de CI
 **Fecha:** 2026-07-31
 **Última actualización:** 2026-08-01
 
@@ -143,5 +143,20 @@ La aplicación preserva las siguientes garantías:
 
 La certificación integral combina las cuatro operaciones sobre IDs distintos, verifica el orden determinístico de eventos, el replay exacto y el aborto completo ante un `before-state` inválido.
 
-**Estado operativo:** `CLOSED_PASS`
-**Evidencia de cierre:** `62 passed` en focales, `256 passed` en suite completa y espacios finales reportados corregidos; `git diff --check` debe reconfirmarse antes del commit.
+## Integridad material de la aprobación
+
+Una aprobación autoriza una versión material exacta del Patch, no solamente su identidad declarada. El contrato reforzado exige:
+
+```text
+Patch profundamente inmutable
+→ representación JSON canónica y versionada
+→ SHA-256
+→ ApprovalGate.patch_digest
+→ verificación antes de idempotencia o persistencia
+```
+
+`patch_id` continúa identificando la propuesta y `patch_digest` identifica el contenido exacto aprobado. Toda aprobación histórica sin digest requiere una nueva decisión humana. La metadata anidada se congela recursivamente en dominio y sólo se convierte a estructuras mutables en la frontera JSON/SQLite.
+
+**Estado operativo:** `INTEGRITY_CORRECTION_LOCAL_PASS_AWAITING_CI`
+**Evidencia local:** `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error`, round-trip SQLite cubierto y `git diff --check` limpio.
+**Condición restante de cierre:** publicar el workflow y verificar GitHub Actions en verde.

@@ -115,6 +115,7 @@ class ApplyApprovedPatchHandler(_Handler):
         }
 
     def handle(self, command: ApplyApprovedPatchCommand):
+        command.assert_patch_integrity()
         existing = self._idempotent(command)
         if existing:
             return _result(existing)

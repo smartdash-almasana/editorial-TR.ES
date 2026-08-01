@@ -4,7 +4,7 @@
 
 Documento operativo. Debe reflejar únicamente capacidades verificadas en el repositorio.
 
-Fecha de corte: 2026-07-31.
+Fecha de corte: 2026-08-01.
 
 ## Regla de lectura
 
@@ -92,6 +92,21 @@ Propiedades verificadas:
 - se reutilizan eventos canónicos de edición;
 - se invalidan dependientes transitivos;
 - la aplicación es idempotente.
+
+### Corrección de integridad del Patch
+
+Implementada y validada localmente; pendiente únicamente de CI publicado:
+
+- `deep_freeze()` congela recursivamente mappings, listas y sets del dominio;
+- `deep_to_jsonable()` convierte recursivamente sólo en fronteras JSON/SQLite;
+- `Patch` declara `patch_schema_version` y calcula un SHA-256 canónico sobre scope, versión, operaciones ordenadas, precondiciones, bloques y metadata completa;
+- `ApprovalGate.for_patch()` conserva `patch_digest`;
+- `ApplyApprovedPatchCommand` y `ApplyApprovedPatchHandler` recalculan y verifican el digest antes de idempotencia o persistencia;
+- aprobaciones legacy sin digest fallan de forma segura y requieren nueva aprobación;
+- SQLite persiste payloads mediante la conversión recursiva central;
+- existe workflow de GitHub Actions para suite normal, suite estricta con warnings como errores y control de whitespace.
+
+El commit `cb16ff3` se conserva como base de las operaciones estructurales. La validación local concluyó con `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error`, round-trip SQLite cubierto y `git diff --check` limpio. El estado operativo es `INTEGRITY_CORRECTION_LOCAL_PASS_AWAITING_CI`; `CLOSED_PASS` permanece suspendido únicamente hasta publicar y verificar GitHub Actions en verde.
 
 ## Suite conocida
 
@@ -307,7 +322,7 @@ ProjectComposition
 → ReviewEngine construido, no ejecutado
 ```
 
-El siguiente corte canónico del roadmap es **Corte 2 — Operaciones estructurales mínimas de Patch**. No se abre como parte de este cierre.
+El Corte 2 — Operaciones estructurales mínimas de Patch está implementado sobre `cb16ff3`, pero su cierre permanece reabierto por el corte de integridad descrito arriba. El próximo paso es validar y certificar esa corrección; no corresponde abrir todavía el Corte 3.
 
 No abrir todavía workflow executor general, providers, jueces probabilísticos, factoría visual, scheduler, UI, API ni TRES.APP.
 

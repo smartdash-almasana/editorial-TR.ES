@@ -49,12 +49,23 @@ class ApplyApprovedPatchCommand(_Command):
     approval: ApprovalGate
     expected_version: int = Field(..., ge=1)
 
+    def assert_patch_integrity(self) -> None:
+        if self.approval.patch_digest is None:
+            raise ValueError(
+                "La aprobación legacy no contiene patch_digest; se requiere una nueva aprobación."
+            )
+        if self.approval.patch_digest != self.patch.digest():
+            raise ValueError(
+                "La aprobación no corresponde al contenido material exacto del Patch."
+            )
+
     @model_validator(mode="after")
     def _match_patch_scope(self) -> "ApplyApprovedPatchCommand":
         if self.approval.status != "approved":
             raise ValueError("El Patch sólo puede aplicarse con una aprobación aprobada.")
         if self.approval.patch_id != self.patch.patch_id:
             raise ValueError("La aprobación no corresponde al Patch.")
+        self.assert_patch_integrity()
         scope = (self.tenant_id, self.editorial_id, self.work_id, self.branch)
         patch_scope = (self.patch.tenant_id, self.patch.editorial_id, self.patch.work_id, self.patch.branch)
         approval_scope = (self.approval.tenant_id, self.approval.editorial_id, self.approval.work_id, self.approval.branch)
