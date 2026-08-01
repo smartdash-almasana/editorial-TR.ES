@@ -1,6 +1,6 @@
 # ADR-005 — Operaciones editoriales tipadas dentro de Patch
 
-**Estado:** Aceptado — corrección de integridad validada localmente, pendiente de CI
+**Estado:** Aceptado — implementación cerrada (`CLOSED_PASS`)
 **Fecha:** 2026-07-31
 **Última actualización:** 2026-08-01
 
@@ -157,6 +157,6 @@ Patch profundamente inmutable
 
 `patch_id` continúa identificando la propuesta y `patch_digest` identifica el contenido exacto aprobado. Toda aprobación histórica sin digest requiere una nueva decisión humana. La metadata anidada se congela recursivamente en dominio y sólo se convierte a estructuras mutables en la frontera JSON/SQLite.
 
-**Estado operativo:** `INTEGRITY_CORRECTION_LOCAL_PASS_AWAITING_CI`
-**Evidencia local:** `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error`, round-trip SQLite cubierto y `git diff --check` limpio.
-**Condición restante de cierre:** publicar el workflow y verificar GitHub Actions en verde.
+**Estado operativo:** `CLOSED_PASS`
+**Evidencia final:** `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error`, round-trip SQLite cubierto, `git diff --check` limpio y workflow `Platform strict integrity` en verde.
+**Commit técnico de cierre:** `dedf64f` (`fix(editorial): enforce patch approval integrity`).

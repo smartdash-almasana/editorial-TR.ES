@@ -95,7 +95,7 @@ Propiedades verificadas:
 
 ### Corrección de integridad del Patch
 
-Implementada y validada localmente; pendiente únicamente de CI publicado:
+Implementada, validada localmente y certificada por CI publicado:
 
 - `deep_freeze()` congela recursivamente mappings, listas y sets del dominio;
 - `deep_to_jsonable()` convierte recursivamente sólo en fronteras JSON/SQLite;
@@ -106,7 +106,7 @@ Implementada y validada localmente; pendiente únicamente de CI publicado:
 - SQLite persiste payloads mediante la conversión recursiva central;
 - existe workflow de GitHub Actions para suite normal, suite estricta con warnings como errores y control de whitespace.
 
-El commit `cb16ff3` se conserva como base de las operaciones estructurales. La validación local concluyó con `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error`, round-trip SQLite cubierto y `git diff --check` limpio. El estado operativo es `INTEGRITY_CORRECTION_LOCAL_PASS_AWAITING_CI`; `CLOSED_PASS` permanece suspendido únicamente hasta publicar y verificar GitHub Actions en verde.
+El commit `cb16ff3` se conserva como base de las operaciones estructurales y `dedf64f` cierra su frontera de integridad. La certificación final registró `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error`, round-trip SQLite cubierto, `git diff --check` limpio y el workflow `Platform strict integrity` en verde. El estado operativo definitivo es `CLOSED_PASS`.
 
 ## Suite conocida
 
@@ -322,7 +322,7 @@ ProjectComposition
 → ReviewEngine construido, no ejecutado
 ```
 
-El Corte 2 — Operaciones estructurales mínimas de Patch está implementado sobre `cb16ff3`, pero su cierre permanece reabierto por el corte de integridad descrito arriba. El próximo paso es validar y certificar esa corrección; no corresponde abrir todavía el Corte 3.
+El Corte 2 — Operaciones estructurales mínimas de Patch queda cerrado y certificado sobre `cb16ff3` + `dedf64f`. El próximo paso no es abrir el Corte 3: corresponde ejecutar un piloto editorial funcional con textos reales para demostrar la utilidad del núcleo sobre contenido concreto.
 
 No abrir todavía workflow executor general, providers, jueces probabilísticos, factoría visual, scheduler, UI, API ni TRES.APP.
 

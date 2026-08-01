@@ -65,9 +65,9 @@ El Corte 1 queda cerrado. La evidencia final registró `10 passed` en focales, `
 
 ## Corte 2 — Operaciones estructurales mínimas de Patch
 
-**Estado:** `INTEGRITY_CORRECTION_LOCAL_PASS_AWAITING_CI`
-**Base preservada:** `cb16ff3` mantiene el catálogo estructural completo. Una auditoría posterior reabrió únicamente la frontera de confianza entre `Patch` y `ApprovalGate` y la inmutabilidad/serialización de metadata anidada.
-**Evidencia local:** `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error` y `git diff --check` limpio. Resta publicar y verificar el workflow de GitHub Actions.
+**Estado:** `CLOSED_PASS`
+**Base preservada:** `cb16ff3` mantiene el catálogo estructural completo. El commit `dedf64f` cerró la frontera de confianza entre `Patch` y `ApprovalGate` y la inmutabilidad/serialización de metadata anidada.
+**Evidencia final:** `88 passed` en focales, `268 passed` en suite completa, `268 passed` con `-W error`, `git diff --check` limpio y workflow `Platform strict integrity` en verde.
 
 ### Objetivo
 
@@ -86,7 +86,7 @@ Permitir curado estructural gobernado sin abandonar `Patch → ApprovalGate → 
 
 ### Corrección de integridad posterior
 
-Implementada, validada localmente y pendiente únicamente de CI publicado:
+Implementada, validada localmente y certificada por CI publicado:
 
 - congelación recursiva centralizada de valores anidados;
 - conversión recursiva y determinística en fronteras JSON/SQLite;
