@@ -322,7 +322,15 @@ ProjectComposition
 → ReviewEngine construido, no ejecutado
 ```
 
-El Corte 2 — Operaciones estructurales mínimas de Patch queda cerrado y certificado sobre `cb16ff3` + `dedf64f`. El próximo paso no es abrir el Corte 3: corresponde ejecutar un piloto editorial funcional con textos reales para demostrar la utilidad del núcleo sobre contenido concreto.
+El Corte 2 — Operaciones estructurales mínimas de Patch queda cerrado y certificado sobre `cb16ff3` + `dedf64f`.
+
+### Piloto editorial privado y publicación (Corte de integración)
+
+Se ha completado y validado el piloto editorial privado de extremo a extremo (`test_private_editorial_factory_v1.py`):
+- Generación de `ReviewFinding` y registro de decisiones humanas explícitas (`accepted`/`rejected`).
+- Conversión de findings aceptados a `Patch`, evaluación en `ApprovalGate` y aplicación del parche atómico en el manuscrito, conservando consistencia sin persistencia parcial.
+- Proyección de la obra aprobada a `EditionSnapshot` inmutable, empaquetado a `AppBookPackage` v1 estático determinista (con checksums SHA-256) y renderizado estático a HTML legible.
+- Se conserva como pendiente (fuera de este alcance) la transición persistente de `Work` a un estado `approved` rígido en base de datos.
 
 No abrir todavía workflow executor general, providers, jueces probabilísticos, factoría visual, scheduler, UI, API ni TRES.APP.
 
