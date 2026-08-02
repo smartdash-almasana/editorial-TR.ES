@@ -1,10 +1,8 @@
-schema_version: 1
-task_id: PC-5
-status: active
-mode: implementation
+schema_version: editorial.tres/cycle-v1
+id: PC-5
 capability: editorial.textual-analysis
-cycle_file: capabilities/textual-analysis/cycles/PC-5.yaml
 objective: build_governed_impersonal_haber_quienes_rule_v1
+status: CLOSED_PASS
 
 allowed_paths:
   - capabilities/textual-analysis/cycles/PC-5.yaml
@@ -53,10 +51,23 @@ forbidden_paths:
   - .github/**
   - platform/pyproject.toml
 
-allowed_new_dependencies: []
-allowed_providers: []
+change_budget:
+  max_production_files: 1
+  max_new_dependencies: 0
+  domain_schema_changes: false
+  event_schema_changes: false
 
-tests:
+dependencies:
+  - TextAnalysisSnapshot
+  - TextSpan
+  - ReviewFinding
+  - TextualFindingBinding
+  - EditorialCriterion
+  - ReplacementProposal
+  - SpanishGrammarCorrector
+providers: []
+
+verification:
   - name: impersonal-haber-quienes-focal
     cwd: platform
     command:
@@ -83,36 +94,51 @@ tests:
       - tests/domain/test_spanish_orthotypographic_corrector.py
       - -q
 
-commit_authorized: true
-push_authorized: true
+permissions:
+  commit: true
+  push: true
 
-baseline:
-  head: a9921fe36aa3ee8e43c80a9ee6672650037e71f8
-  preexisting_changes:
-    - path: AGENTS.md
-      status: '??'
-      sha256: ad8e561bc069ff4b92fb9f90d0c7cc64ba881bf6f2327ab8c7266356d714d60c
-    - path: tools/verify_active_task.py
-      status: '??'
-      sha256: 462621e07d157da9b6da9f5851e09832a17bb9430f4167e1513852272b0a006c
-    - path: platform/tests/lab_experiment_001_casa_del_rio.py
-      status: '??'
-      sha256: 48ca529e1198f1c86e9a1a8c256d9579ca9728dc8e32d9073282b797e049e1f7
-    - path: platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
-      status: '??'
-      sha256: f8cb2bd6adb256d42345691fdcaa028b35a329618e4a683ea700a7af6723d47b
-    - path: platform/tests/lab_real_text_002_el_perro_mas_listo.py
-      status: '??'
-      sha256: feab13ea4a6e5f244375256c3f2e4a9d3c76703018048db64f44fa70fe2670d3
-    - path: platform/tests/lab_real_text_003_corazon_piedra_verde.py
-      status: '??'
-      sha256: a43ebfb802446d2a37c807b95383346e4f0c82047967cccf48f537271e1ecaf2
-    - path: capabilities/textual-analysis/cycles/LAB-PC-1.yaml
-      status: '??'
-      sha256: 4fcf2c3372cd990afc886a2f6239b82cb4a3d134321edb6de47461a5f3c67bd4
-    - path: capabilities/textual-analysis/labs/LAB-PC-1.md
-      status: '??'
-      sha256: c1abb1e28636fb6594a674d40c90e67256cca5e63c20a2ba11c61b1c9373d248
-    - path: platform/tests/lab_pc_1_spanish_correction_real_text.py
-      status: '??'
-      sha256: 4a05d5105280c6c821cb26f2ffeb795c4ea75ae9b821e6aa23c7f8c4cd8c4347
+deliverables:
+  - one exact governed built-in rule for plural impersonal haber followed by quienes
+  - verified_error finding with certainty 1.0 for Habían quienes and case-preserving singular proposal
+  - preservation of the existing probable plural impersonal haber rule for bounded quantifiers
+  - explicit negative controls for auxiliary haber and already singular Había quienes
+  - PC3-E009 promoted from measured omission to supported case
+  - controlled corpus recall raised from 0.85 to 0.90 if and only if the governed case passes
+  - zero unexpected findings and zero control false positives
+  - immutable source fixture snapshot and Work
+  - no Patch creation no automatic correction no dequeism no word segmentation
+  - no generic parser no unrestricted morphology no LLM no provider no plugin no dependency
+
+impersonal_haber_quienes_result:
+  verdict: PASS_PC5_IMPERSONAL_HABER_QUIENES
+  verification: PASS
+  corpus_id: pc3.el-puerto-y-el-rio.v1
+  gold_errors: 20
+  supported_errors: 18
+  supported_detected: 18
+  supported_omitted: 0
+  unsupported_errors: 2
+  unsupported_detected: 0
+  unexpected_findings: 0
+  control_false_positives: 0
+  supported_recall: 1.0
+  controlled_corpus_overall_recall: 0.90
+  controlled_corpus_precision: 1.0
+  source_unchanged: true
+  work_unchanged: true
+  patch_created: false
+  automatic_correction: false
+  product_wide_accuracy_claim: false
+  christian_editorial_alignment_validated: false
+  product_sufficiency_demonstrated: false
+  impersonal_haber_quienes_focal: 25 passed
+  spanish_gold_corpus_regression: 1 passed
+  orthotypographic_neighbor_regression: 25 passed
+  decision: CLOSE_RULE_ADDITION_AND_ADVANCE_TO_BLIND_REAL_TEXT_EVALUATION
+
+completion:
+  requires_all_verification: true
+  requires_gold_adjudication: true
+  evidence_update: cycle_file_only
+  advance_next_cycle: false

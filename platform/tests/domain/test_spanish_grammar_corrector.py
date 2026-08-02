@@ -164,10 +164,38 @@ def test_plural_impersonal_haber_is_a_probable_issue(
     assert _replacement(finding) == expected
 
 
-def test_plural_haber_auxiliary_is_not_inferred_as_impersonal() -> None:
-    snapshot = _snapshot("Habían llegado muchas personas.")
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    (
+        ("Habían quienes esperaban.", "Había quienes esperaban."),
+        ("habían quienes esperaban.", "había quienes esperaban."),
+        ("HABÍAN QUIENES ESPERABAN.", "HABÍA QUIENES ESPERABAN."),
+    ),
+)
+def test_habian_quienes_is_a_verified_exact_impersonal_error(
+    source: str,
+    expected: str,
+) -> None:
+    finding = SpanishGrammarCorrector().analyze(_snapshot(source))[0]
 
-    assert SpanishGrammarCorrector().analyze(snapshot) == ()
+    assert finding.finding_type == "grammar.impersonal_haber_quienes_number"
+    assert finding.editorial_classification == "verified_error"
+    assert finding.severity == "error"
+    assert finding.certainty == 1.0
+    assert _replacement(finding) == expected
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "Habían llegado muchas personas.",
+        "Había quienes esperaban.",
+    ),
+)
+def test_haber_quienes_rule_preserves_auxiliary_and_singular_forms(
+    source: str,
+) -> None:
+    assert SpanishGrammarCorrector().analyze(_snapshot(source)) == ()
 
 
 @pytest.mark.parametrize(
@@ -230,8 +258,8 @@ def test_registry_is_explicit_unique_versioned_and_immutable() -> None:
         for criterion in corrector.rule_registry
     )
 
-    assert len(BUILTIN_GRAMMAR_RULES) == 3
-    assert len(identities) == 4
+    assert len(BUILTIN_GRAMMAR_RULES) == 4
+    assert len(identities) == 5
     assert len(identities) == len(set(identities))
     with pytest.raises(ValidationError):
         BUILTIN_GRAMMAR_RULES[0].description = "Alterada."

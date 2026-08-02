@@ -15,8 +15,8 @@
   "adjudication": {
     "status": "complete_for_this_controlled_corpus",
     "expected_error_count": 20,
-    "supported_by_existing_configuration_count": 17,
-    "unsupported_or_uncovered_count": 3,
+    "supported_by_existing_configuration_count": 18,
+    "unsupported_or_uncovered_count": 2,
     "scope": "normative Spanish correction only",
     "exclusions": [
       "Christian genre",
@@ -191,14 +191,19 @@
     {
       "case_id": "PC3-E009",
       "category": "grammar.impersonal_haber_number",
-      "rule_family": "builtin_family_uncovered_pattern",
-      "support_status": "unsupported",
+      "rule_family": "governed_exact_impersonal_haber_quienes",
+      "support_status": "supported",
       "start": 739,
       "end": 753,
       "source_fragment": "Habían quienes",
       "replacement_fragment": "Había quienes",
       "adjudication": "verified_error",
-      "reason": "PC-2 reconoce haber impersonal sólo ante cuantificadores enumerados; no cubre «quienes»."
+      "configuration": {
+        "kind": "builtin",
+        "rationale": "En «había quienes», el verbo impersonal «haber» se mantiene en singular.",
+        "criterion_id": "es.grammar.impersonal-haber-quienes-number",
+        "criterion_version": "1.0.0"
+      }
     },
     {
       "case_id": "PC3-E010",
@@ -426,6 +431,11 @@
       "control_id": "PC3-N004",
       "text": "Sin embargo, algo había cambiado.",
       "reason": "«había» funciona como auxiliar y no como impersonal existencial plural."
+    },
+    {
+      "control_id": "PC3-N005",
+      "text": "Había quienes preferían esperar.",
+      "reason": "La forma singular impersonal ya es normativa y debe preservarse."
     }
   ],
   "ambiguous_controls": [

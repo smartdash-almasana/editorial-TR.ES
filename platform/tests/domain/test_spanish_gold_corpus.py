@@ -194,12 +194,12 @@ def test_pc3_gold_corpus_measures_supported_and_unsupported_cases() -> None:
     assert (
         len(supported)
         == gold["adjudication"]["supported_by_existing_configuration_count"]
-        == 17
+        == 18
     )
     assert (
         len(unsupported)
         == gold["adjudication"]["unsupported_or_uncovered_count"]
-        == 3
+        == 2
     )
 
     supported_by_criterion = {
@@ -215,7 +215,7 @@ def test_pc3_gold_corpus_measures_supported_and_unsupported_cases() -> None:
     assert detected_ids == set(supported_by_criterion)
     assert omitted_supported_ids == set()
     assert unexpected_ids == set()
-    assert len(findings) == 17
+    assert len(findings) == 18
 
     for criterion_id, case in supported_by_criterion.items():
         finding = findings_by_criterion[criterion_id]

@@ -19,6 +19,7 @@ from editorial_tres.domain.text_analysis import TextAnalysisSnapshot, TextSpan
 GrammarRuleKey = Literal[
     "incompatible_object_clitics",
     "a_pesar_que_government",
+    "plural_impersonal_haber_quienes",
     "plural_impersonal_haber",
 ]
 GrammarClassification = Literal["verified_error", "probable_issue"]
@@ -128,6 +129,25 @@ BUILTIN_GRAMMAR_RULES: tuple[GrammarRule, ...] = (
         rationale="Usar la locución conjuntiva completa «a pesar de que».",
     ),
     GrammarRule(
+        rule_key="plural_impersonal_haber_quienes",
+        finding_type="grammar.impersonal_haber_quienes_number",
+        criterion=EditorialCriterion(
+            criterion_id="es.grammar.impersonal-haber-quienes-number",
+            criterion_version="1.0.0",
+        ),
+        classification="verified_error",
+        certainty=1.0,
+        severity="error",
+        description=(
+            "La forma plural «habían» se usa como verbo impersonal existencial "
+            "ante «quienes»."
+        ),
+        rationale=(
+            "En «había quienes», el verbo impersonal «haber» se mantiene en "
+            "singular."
+        ),
+    ),
+    GrammarRule(
         rule_key="plural_impersonal_haber",
         finding_type="grammar.probable_plural_impersonal_haber",
         criterion=EditorialCriterion(
@@ -155,6 +175,10 @@ _CLITIC_SEQUENCE = re.compile(
 )
 _A_PESAR_QUE = re.compile(
     r"(?<!\w)(a\s+pesar\s+)(que)(?!\w)",
+    flags=re.IGNORECASE | re.UNICODE,
+)
+_IMPERSONAL_HABER_QUIENES = re.compile(
+    r"(?<!\w)(habían)(\s+)(quienes)(?!\w)",
     flags=re.IGNORECASE | re.UNICODE,
 )
 _EXISTENTIAL_QUANTIFIER = (
@@ -201,6 +225,15 @@ def _correct_builtin(rule_key: GrammarRuleKey, text: str) -> str:
     if rule_key == "a_pesar_que_government":
         return _A_PESAR_QUE.sub(
             lambda match: match.group(1) + "de " + match.group(2),
+            text,
+        )
+    if rule_key == "plural_impersonal_haber_quienes":
+        return _IMPERSONAL_HABER_QUIENES.sub(
+            lambda match: (
+                _match_case(match.group(1), "había")
+                + match.group(2)
+                + match.group(3)
+            ),
             text,
         )
     if rule_key == "plural_impersonal_haber":
