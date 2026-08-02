@@ -1,35 +1,35 @@
 schema_version: 1
-task_id: PC-2
+task_id: PC-3
 status: active
 mode: implementation
 capability: editorial.textual-analysis
-cycle_file: capabilities/textual-analysis/cycles/PC-2.yaml
-objective: build_dependency_free_span_traceable_spanish_grammar_corrector_v1
+cycle_file: capabilities/textual-analysis/cycles/PC-3.yaml
+objective: build_governed_span_annotated_gold_corpus_and_measure_pc1_pc2_v1
 
 allowed_paths:
-  - capabilities/textual-analysis/**
+  - capabilities/textual-analysis/cycles/PC-3.yaml
   - ops/ACTIVE_TASK.yaml
-  - platform/src/editorial_tres/domain/grammar.py
-  - platform/tests/domain/test_spanish_grammar_corrector.py
-  - docs/architecture/EDITORIAL_TRES_ENGINEERING_STATE.md
+  - platform/tests/fixtures/el_puerto_y_el_rio_con_errores.md
+  - platform/tests/fixtures/el_puerto_y_el_rio_gold.json
+  - platform/tests/domain/test_spanish_gold_corpus.py
 
 forbidden_paths:
   - AGENTS.md
   - tools/**
+  - capabilities/textual-analysis/EVIDENCE.md
+  - capabilities/textual-analysis/cycles/PT-0.yaml
+  - capabilities/textual-analysis/cycles/PC-0.yaml
+  - capabilities/textual-analysis/cycles/PC-1.yaml
+  - capabilities/textual-analysis/cycles/PC-2.yaml
+  - capabilities/textual-analysis/cycles/LAB-PC-1.yaml
+  - capabilities/textual-analysis/labs/LAB-PC-1.md
   - capabilities/global-repetition/**
   - capabilities/edition-slice/**
   - capabilities/private-factory-pilot/**
-  - platform/src/editorial_tres/domain/proofreading.py
-  - platform/src/editorial_tres/domain/reviews.py
-  - platform/src/editorial_tres/domain/text_analysis.py
-  - platform/src/editorial_tres/domain/finding_decisions.py
-  - platform/src/editorial_tres/domain/editorial_passes.py
-  - platform/src/editorial_tres/domain/patches.py
-  - platform/src/editorial_tres/domain/work.py
-  - platform/src/editorial_tres/domain/graphs/**
-  - platform/src/editorial_tres/application/**
-  - platform/src/editorial_tres/infrastructure/**
+  - docs/**
+  - platform/src/**
   - platform/tests/lab_experiment_001_casa_del_rio.py
+  - platform/tests/lab_pc_1_spanish_correction_real_text.py
   - platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
   - platform/tests/lab_real_text_002_el_perro_mas_listo.py
   - platform/tests/lab_real_text_003_corazon_piedra_verde.py
@@ -44,40 +44,30 @@ allowed_new_dependencies: []
 allowed_providers: []
 
 tests:
-  - name: spanish-grammar-corrector-focal
+  - name: spanish-gold-corpus-focal
     cwd: platform
     command:
       - python
       - -m
       - pytest
-      - tests/domain/test_spanish_grammar_corrector.py
+      - tests/domain/test_spanish_gold_corpus.py
       - -q
-  - name: spanish-grammar-corrector-neighbor
+      - -s
+  - name: pc1-pc2-regression
     cwd: platform
     command:
       - python
       - -m
       - pytest
       - tests/domain/test_spanish_orthotypographic_corrector.py
-      - tests/domain/test_editorial_diagnostic_findings.py
-      - tests/domain/test_text_analysis.py
-      - tests/domain/test_reviews.py
-      - -q
-  - name: platform-suite-strict
-    cwd: platform
-    command:
-      - python
-      - -m
-      - pytest
-      - -W
-      - error
+      - tests/domain/test_spanish_grammar_corrector.py
       - -q
 
 commit_authorized: true
 push_authorized: true
 
 baseline:
-  head: 9d80e85c159ff4e8d8f803d359ae902150cd203f
+  head: 6a9610c6192cd5c0520f5bb271306009dbc05bbc
   preexisting_changes:
     - path: AGENTS.md
       status: '??'
@@ -97,3 +87,12 @@ baseline:
     - path: platform/tests/lab_real_text_003_corazon_piedra_verde.py
       status: '??'
       sha256: a43ebfb802446d2a37c807b95383346e4f0c82047967cccf48f537271e1ecaf2
+    - path: capabilities/textual-analysis/cycles/LAB-PC-1.yaml
+      status: '??'
+      sha256: 4fcf2c3372cd990afc886a2f6239b82cb4a3d134321edb6de47461a5f3c67bd4
+    - path: capabilities/textual-analysis/labs/LAB-PC-1.md
+      status: '??'
+      sha256: c1abb1e28636fb6594a674d40c90e67256cca5e63c20a2ba11c61b1c9373d248
+    - path: platform/tests/lab_pc_1_spanish_correction_real_text.py
+      status: '??'
+      sha256: 4a05d5105280c6c821cb26f2ffeb795c4ea75ae9b821e6aa23c7f8c4cd8c4347

@@ -1,0 +1,123 @@
+schema_version: editorial.tres/cycle-v1
+id: PC-3
+capability: editorial.textual-analysis
+objective: build_governed_span_annotated_gold_corpus_and_measure_pc1_pc2_v1
+status: CLOSED_PASS
+
+allowed_paths:
+  - capabilities/textual-analysis/cycles/PC-3.yaml
+  - ops/ACTIVE_TASK.yaml
+  - platform/tests/fixtures/el_puerto_y_el_rio_con_errores.md
+  - platform/tests/fixtures/el_puerto_y_el_rio_gold.json
+  - platform/tests/domain/test_spanish_gold_corpus.py
+
+forbidden_paths:
+  - AGENTS.md
+  - tools/**
+  - capabilities/textual-analysis/EVIDENCE.md
+  - capabilities/textual-analysis/cycles/PT-0.yaml
+  - capabilities/textual-analysis/cycles/PC-0.yaml
+  - capabilities/textual-analysis/cycles/PC-1.yaml
+  - capabilities/textual-analysis/cycles/PC-2.yaml
+  - capabilities/textual-analysis/cycles/LAB-PC-1.yaml
+  - capabilities/textual-analysis/labs/LAB-PC-1.md
+  - capabilities/global-repetition/**
+  - capabilities/edition-slice/**
+  - capabilities/private-factory-pilot/**
+  - docs/**
+  - platform/src/**
+  - platform/tests/lab_experiment_001_casa_del_rio.py
+  - platform/tests/lab_pc_1_spanish_correction_real_text.py
+  - platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
+  - platform/tests/lab_real_text_002_el_perro_mas_listo.py
+  - platform/tests/lab_real_text_003_corazon_piedra_verde.py
+  - platform/tests/pilots/**
+  - plugins/**
+  - projects/**
+  - constitution/**
+  - .github/**
+  - platform/pyproject.toml
+
+change_budget:
+  max_production_files: 0
+  max_new_dependencies: 0
+  domain_schema_changes: false
+  event_schema_changes: false
+
+dependencies:
+  - TextAnalyzer
+  - TextAnalysisSnapshot
+  - SpanishOrthotypographicCorrector
+  - SpanishGrammarCorrector
+  - LexicalCorrection
+  - SimpleAgreementRule
+providers: []
+
+verification:
+  - name: spanish-gold-corpus-focal
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - tests/domain/test_spanish_gold_corpus.py
+      - -q
+      - -s
+  - name: pc1-pc2-regression
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - tests/domain/test_spanish_orthotypographic_corrector.py
+      - tests/domain/test_spanish_grammar_corrector.py
+      - -q
+
+permissions:
+  commit: true
+  push: true
+
+deliverables:
+  - byte-identical repository fixture copied from the user-provided short story with errors
+  - separate versioned Gold annotation with exact block-relative spans source fragments categories corrections and adjudication
+  - explicit negative and ambiguous controls that must not count as errors
+  - deterministic execution through the integrated PT-0 PC-1 and PC-2 APIs
+  - governed configuration of existing lexical and simple-agreement registries from Gold entries without hardcoding them inside either corrector
+  - per-case accounting of true positives omissions unexpected findings and false positives
+  - metrics reported both overall and by supported versus unsupported rule family
+  - no fabricated product-wide accuracy claim from one controlled corpus
+  - source fixture snapshot and Work remain immutable
+  - no Patch creation no automatic correction no product code change no dependency no provider no LLM and no plugin
+  - explicit statement that Christian genre voice doctrine and theological alignment remain outside PC-3
+
+gold_corpus_result:
+  verdict: PASS_PC3_GOLD_CORPUS
+  verification: PASS
+  corpus_id: pc3.el-puerto-y-el-rio.v1
+  gold_errors: 20
+  supported_errors: 13
+  supported_detected: 13
+  supported_omitted: 0
+  unsupported_errors: 7
+  unsupported_detected: 0
+  unexpected_findings: 0
+  control_false_positives: 0
+  supported_recall: 1.0
+  controlled_corpus_overall_recall: 0.65
+  controlled_corpus_precision: 1.0
+  source_unchanged: true
+  work_unchanged: true
+  patch_created: false
+  automatic_correction: false
+  product_wide_accuracy_claim: false
+  christian_editorial_alignment_validated: false
+  product_sufficiency_demonstrated: false
+  focal_test: 1 passed
+  pc1_pc2_regression: 37 passed
+  decision: RETAIN_SEVEN_GOVERNED_CAPACITY_GAPS_FOR_A_SEPARATE_CYCLE
+
+completion:
+  requires_all_verification: true
+  requires_gold_adjudication: true
+  evidence_update: cycle_file_only
+  advance_next_cycle: false

@@ -1,0 +1,412 @@
+{
+  "schema_version": "editorial.tres/spanish-gold-corpus-v1",
+  "corpus_id": "pc3.el-puerto-y-el-rio.v1",
+  "title": "El puerto y el río",
+  "language": "es-AR",
+  "source": {
+    "fixture_path": "tests/fixtures/el_puerto_y_el_rio_con_errores.md",
+    "encoding": "utf-8",
+    "fixture_sha256": "1c74b97b2c48e09b2855bbc77b319f1a9c39e7935926c71810b0269c75fe9903",
+    "body_sha256": "35bd00f8476c28ee6b0bc2d250b319c9818f7849ac047f1d2e54f06f862b5190",
+    "body_extraction": "text after the first blank line",
+    "block_id": "story-body",
+    "block_length": 3308
+  },
+  "adjudication": {
+    "status": "complete_for_this_controlled_corpus",
+    "expected_error_count": 20,
+    "supported_by_existing_configuration_count": 13,
+    "unsupported_or_uncovered_count": 7,
+    "scope": "normative Spanish correction only",
+    "exclusions": [
+      "Christian genre",
+      "voice",
+      "doctrine",
+      "theological alignment"
+    ]
+  },
+  "errors": [
+    {
+      "case_id": "PC3-E001",
+      "category": "orthography.lexical",
+      "rule_family": "configured_lexical_exact_token",
+      "support_status": "supported",
+      "start": 49,
+      "end": 56,
+      "source_fragment": "todabía",
+      "replacement_fragment": "todavía",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "lexical",
+        "source_token": "todabía",
+        "replacement_text": "todavía",
+        "rationale": "La grafía normativa es «todavía».",
+        "criterion_id": "oro.pc3.lexical.todabia",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E002",
+      "category": "grammar.subject_verb_number_agreement",
+      "rule_family": "configured_simple_agreement",
+      "support_status": "supported",
+      "start": 150,
+      "end": 177,
+      "source_fragment": "los pescadores que discutía",
+      "replacement_fragment": "los pescadores que discutían",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "agreement",
+        "singular_subject": "el pescador que",
+        "plural_subject": "los pescadores que",
+        "singular_verb": "discutía",
+        "plural_verb": "discutían",
+        "rationale": "El antecedente plural «los pescadores» exige verbo plural.",
+        "criterion_id": "oro.pc3.agreement.pescadores-discutian",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E003",
+      "category": "grammar.subject_verb_number_agreement",
+      "rule_family": "configured_simple_agreement",
+      "support_status": "supported",
+      "start": 241,
+      "end": 265,
+      "source_fragment": "Sus aguas marrones venía",
+      "replacement_fragment": "Sus aguas marrones venían",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "agreement",
+        "singular_subject": "Su agua marrón",
+        "plural_subject": "Sus aguas marrones",
+        "singular_verb": "venía",
+        "plural_verb": "venían",
+        "rationale": "El sujeto plural «Sus aguas marrones» exige verbo plural.",
+        "criterion_id": "oro.pc3.agreement.aguas-venian",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E004",
+      "category": "orthography.contextual_accent",
+      "rule_family": "unsupported_contextual_lexical_disambiguation",
+      "support_status": "unsupported",
+      "start": 388,
+      "end": 393,
+      "source_fragment": "tenia",
+      "replacement_fragment": "tenía",
+      "adjudication": "verified_error",
+      "reason": "La corrección exacta global produciría falsos positivos sobre el sustantivo válido «tenia»."
+    },
+    {
+      "case_id": "PC3-E005",
+      "category": "orthography.lexical",
+      "rule_family": "configured_lexical_exact_token",
+      "support_status": "supported",
+      "start": 407,
+      "end": 413,
+      "source_fragment": "Nadies",
+      "replacement_fragment": "Nadie",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "lexical",
+        "source_token": "Nadies",
+        "replacement_text": "Nadie",
+        "rationale": "El indefinido normativo es «nadie».",
+        "criterion_id": "oro.pc3.lexical.nadies",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E006",
+      "category": "orthography.contextual_accent",
+      "rule_family": "unsupported_contextual_lexical_disambiguation",
+      "support_status": "unsupported",
+      "start": 434,
+      "end": 441,
+      "source_fragment": "cuantos",
+      "replacement_fragment": "cuántos",
+      "adjudication": "verified_error",
+      "reason": "La tilde depende del valor interrogativo; «cuantos» también puede ser relativo válido."
+    },
+    {
+      "case_id": "PC3-E007",
+      "category": "grammar.subject_verb_number_agreement",
+      "rule_family": "configured_simple_agreement",
+      "support_status": "supported",
+      "start": 442,
+      "end": 459,
+      "source_fragment": "años había pasado",
+      "replacement_fragment": "años habían pasado",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "agreement",
+        "singular_subject": "año",
+        "plural_subject": "años",
+        "singular_verb": "había",
+        "plural_verb": "habían",
+        "rationale": "El sujeto plural «años» exige el auxiliar en plural.",
+        "criterion_id": "oro.pc3.agreement.anos-habian",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E008",
+      "category": "orthography.accent",
+      "rule_family": "configured_lexical_exact_token",
+      "support_status": "supported",
+      "start": 598,
+      "end": 601,
+      "source_fragment": "rio",
+      "replacement_fragment": "río",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "lexical",
+        "source_token": "rio",
+        "replacement_text": "río",
+        "rationale": "El sustantivo «río» lleva tilde.",
+        "criterion_id": "oro.pc3.lexical.rio",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E009",
+      "category": "grammar.impersonal_haber_number",
+      "rule_family": "builtin_family_uncovered_pattern",
+      "support_status": "unsupported",
+      "start": 739,
+      "end": 753,
+      "source_fragment": "Habían quienes",
+      "replacement_fragment": "Había quienes",
+      "adjudication": "verified_error",
+      "reason": "PC-2 reconoce haber impersonal sólo ante cuantificadores enumerados; no cubre «quienes»."
+    },
+    {
+      "case_id": "PC3-E010",
+      "category": "orthography.lexical",
+      "rule_family": "configured_lexical_exact_token",
+      "support_status": "supported",
+      "start": 803,
+      "end": 808,
+      "source_fragment": "serca",
+      "replacement_fragment": "cerca",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "lexical",
+        "source_token": "serca",
+        "replacement_text": "cerca",
+        "rationale": "La grafía normativa es «cerca».",
+        "criterion_id": "oro.pc3.lexical.serca",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E011",
+      "category": "grammar.dequeism",
+      "rule_family": "unsupported_syntactic_government",
+      "support_status": "unsupported",
+      "start": 829,
+      "end": 842,
+      "source_fragment": "decían de que",
+      "replacement_fragment": "decían que",
+      "adjudication": "verified_error",
+      "reason": "PC-2 no implementa detección contextual de dequeísmo."
+    },
+    {
+      "case_id": "PC3-E012",
+      "category": "orthography.lexical",
+      "rule_family": "configured_lexical_exact_token",
+      "support_status": "supported",
+      "start": 933,
+      "end": 941,
+      "source_fragment": "orizonte",
+      "replacement_fragment": "horizonte",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "lexical",
+        "source_token": "orizonte",
+        "replacement_text": "horizonte",
+        "rationale": "La grafía normativa conserva la hache inicial: «horizonte».",
+        "criterion_id": "oro.pc3.lexical.orizonte",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E013",
+      "category": "grammar.subject_verb_number_agreement",
+      "rule_family": "configured_simple_agreement",
+      "support_status": "supported",
+      "start": 1394,
+      "end": 1411,
+      "source_fragment": "los barriles rodó",
+      "replacement_fragment": "los barriles rodaron",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "agreement",
+        "singular_subject": "el barril",
+        "plural_subject": "los barriles",
+        "singular_verb": "rodó",
+        "plural_verb": "rodaron",
+        "rationale": "El sujeto plural «los barriles» exige verbo plural.",
+        "criterion_id": "oro.pc3.agreement.barriles-rodaron",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E014",
+      "category": "orthography.word_segmentation",
+      "rule_family": "unsupported_multi_token_segmentation",
+      "support_status": "unsupported",
+      "start": 1949,
+      "end": 1956,
+      "source_fragment": "aun que",
+      "replacement_fragment": "aunque",
+      "adjudication": "verified_error",
+      "reason": "El registro léxico de PC-1 sólo admite reemplazar un token exacto."
+    },
+    {
+      "case_id": "PC3-E015",
+      "category": "orthography.contextual_accent",
+      "rule_family": "unsupported_contextual_lexical_disambiguation",
+      "support_status": "unsupported",
+      "start": 2296,
+      "end": 2301,
+      "source_fragment": "tenia",
+      "replacement_fragment": "tenía",
+      "adjudication": "verified_error",
+      "reason": "La corrección exacta global produciría falsos positivos sobre el sustantivo válido «tenia»."
+    },
+    {
+      "case_id": "PC3-E016",
+      "category": "grammar.subject_verb_number_agreement",
+      "rule_family": "configured_simple_agreement",
+      "support_status": "supported",
+      "start": 2703,
+      "end": 2735,
+      "source_fragment": "La gente del pueblo se acercaban",
+      "replacement_fragment": "La gente del pueblo se acercaba",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "agreement",
+        "singular_subject": "La gente del pueblo se",
+        "plural_subject": "Las gentes del pueblo se",
+        "singular_verb": "acercaba",
+        "plural_verb": "acercaban",
+        "rationale": "El núcleo singular colectivo «gente» exige aquí verbo singular.",
+        "criterion_id": "oro.pc3.agreement.gente-se-acercaba",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E017",
+      "category": "grammar.subject_verb_number_agreement",
+      "rule_family": "configured_simple_agreement",
+      "support_status": "supported",
+      "start": 2783,
+      "end": 2816,
+      "source_fragment": "detalles que nunca había ocurrido",
+      "replacement_fragment": "detalles que nunca habían ocurrido",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "agreement",
+        "singular_subject": "detalle que nunca",
+        "plural_subject": "detalles que nunca",
+        "singular_verb": "había",
+        "plural_verb": "habían",
+        "rationale": "El antecedente plural «detalles» exige el auxiliar en plural.",
+        "criterion_id": "oro.pc3.agreement.detalles-habian",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E018",
+      "category": "orthography.accent",
+      "rule_family": "configured_lexical_exact_token",
+      "support_status": "supported",
+      "start": 2918,
+      "end": 2928,
+      "source_fragment": "kilometros",
+      "replacement_fragment": "kilómetros",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "lexical",
+        "source_token": "kilometros",
+        "replacement_text": "kilómetros",
+        "rationale": "La palabra es esdrújula y lleva tilde: «kilómetros».",
+        "criterion_id": "oro.pc3.lexical.kilometros",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E019",
+      "category": "orthography.lexical",
+      "rule_family": "configured_lexical_exact_token",
+      "support_status": "supported",
+      "start": 3257,
+      "end": 3264,
+      "source_fragment": "paresca",
+      "replacement_fragment": "parezca",
+      "adjudication": "verified_error",
+      "configuration": {
+        "kind": "lexical",
+        "source_token": "paresca",
+        "replacement_text": "parezca",
+        "rationale": "La forma normativa de «parecer» es «parezca».",
+        "criterion_id": "oro.pc3.lexical.paresca",
+        "criterion_version": "1.0.0"
+      }
+    },
+    {
+      "case_id": "PC3-E020",
+      "category": "orthography.contextual_accent",
+      "rule_family": "unsupported_contextual_lexical_disambiguation",
+      "support_status": "unsupported",
+      "start": 3287,
+      "end": 3292,
+      "source_fragment": "donde",
+      "replacement_fragment": "dónde",
+      "adjudication": "verified_error",
+      "reason": "La tilde depende del valor interrogativo indirecto; «donde» también es relativo válido."
+    }
+  ],
+  "negative_controls": [
+    {
+      "control_id": "PC3-N001",
+      "text": "La tenia adulta puede afectar el intestino.",
+      "reason": "«tenia» es aquí un sustantivo válido sin tilde."
+    },
+    {
+      "control_id": "PC3-N002",
+      "text": "Trabajaron cuantos días quisieron.",
+      "reason": "«cuantos» es aquí un relativo válido sin tilde."
+    },
+    {
+      "control_id": "PC3-N003",
+      "text": "El muelle donde trabaja Tomás queda lejos.",
+      "reason": "«donde» es aquí un relativo válido sin tilde."
+    },
+    {
+      "control_id": "PC3-N004",
+      "text": "Sin embargo, algo había cambiado.",
+      "reason": "«había» funciona como auxiliar y no como impersonal existencial plural."
+    }
+  ],
+  "ambiguous_controls": [
+    {
+      "control_id": "PC3-A001",
+      "text": "—Vení para acá, se viene feo —le gritó el capataz.",
+      "reason": "Voseo y expresión coloquial deliberados; no son error normativo del corpus."
+    },
+    {
+      "control_id": "PC3-A002",
+      "text": "—Yo pensé lo mismo de vos.",
+      "reason": "El voseo rioplatense debe preservarse."
+    },
+    {
+      "control_id": "PC3-A003",
+      "text": "El puerto me quedaba chico.",
+      "reason": "Predicación coloquial válida; no debe normalizarse por estilo."
+    }
+  ]
+}
