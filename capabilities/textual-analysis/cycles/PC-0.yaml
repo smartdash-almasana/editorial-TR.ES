@@ -1,10 +1,8 @@
-schema_version: 1
-task_id: PC-0
-status: active
-mode: implementation
+schema_version: editorial.tres/cycle-v1
+id: PC-0
 capability: editorial.textual-analysis
-cycle_file: capabilities/textual-analysis/cycles/PC-0.yaml
 objective: build_traceable_editorial_finding_contract_for_correction_and_literary_alignment_v1
+status: CLOSED_PASS
 
 allowed_paths:
   - capabilities/textual-analysis/**
@@ -38,10 +36,20 @@ forbidden_paths:
   - .github/**
   - platform/pyproject.toml
 
-allowed_new_dependencies: []
-allowed_providers: []
+change_budget:
+  max_production_files: 1
+  max_new_dependencies: 0
+  domain_schema_changes: true
+  event_schema_changes: false
 
-tests:
+dependencies:
+  - ReviewFinding
+  - TextAnalysisSnapshot
+  - TextSpan
+  - FindingDecision
+providers: []
+
+verification:
   - name: editorial-diagnostic-focal
     cwd: platform
     command:
@@ -71,27 +79,24 @@ tests:
       - error
       - -q
 
-commit_authorized: true
-push_authorized: true
+permissions:
+  commit: true
+  push: true
 
-baseline:
-  head: 2c2598339fca423251b0ff1127f853f8d1e25dc2
-  preexisting_changes:
-    - path: AGENTS.md
-      status: '??'
-      sha256: ad8e561bc069ff4b92fb9f90d0c7cc64ba881bf6f2327ab8c7266356d714d60c
-    - path: tools/verify_active_task.py
-      status: '??'
-      sha256: 462621e07d157da9b6da9f5851e09832a17bb9430f4167e1513852272b0a006c
-    - path: platform/tests/lab_experiment_001_casa_del_rio.py
-      status: '??'
-      sha256: 48ca529e1198f1c86e9a1a8c256d9579ca9728dc8e32d9073282b797e049e1f7
-    - path: platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
-      status: '??'
-      sha256: f8cb2bd6adb256d42345691fdcaa028b35a329618e4a683ea700a7af6723d47b
-    - path: platform/tests/lab_real_text_002_el_perro_mas_listo.py
-      status: '??'
-      sha256: feab13ea4a6e5f244375256c3f2e4a9d3c76703018048db64f44fa70fe2670d3
-    - path: platform/tests/lab_real_text_003_corazon_piedra_verde.py
-      status: '??'
-      sha256: a43ebfb802446d2a37c807b95383346e4f0c82047967cccf48f537271e1ecaf2
+deliverables:
+  - backward-compatible ReviewFinding contract for legacy block findings
+  - explicit diagnostic axis separating normative correction from literary alignment
+  - editorial classification separating verified error inconsistency probable issue stylistic suggestion and authorial choice
+  - versioned criterion identity and declared certainty
+  - optional exact TextAnalysisSnapshot and TextSpan binding
+  - exact evidence validation against the bound span
+  - immutable replacement proposals that never mutate Work or become Patch automatically
+  - deterministic finding identity derived from scope criterion span evidence and proposals
+  - explicit rejection of partial stale or cross-scope textual bindings
+  - no grammar engine no provider no plugin no automatic correction in this cycle
+  - engineering evidence update only after successful verification
+
+completion:
+  requires_all_verification: true
+  evidence_update: manual
+  advance_next_cycle: false

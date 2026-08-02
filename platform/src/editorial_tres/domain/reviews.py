@@ -8,10 +8,136 @@ from typing import Literal, Tuple
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
+from editorial_tres.domain.immutable_values import canonical_json
+from editorial_tres.domain.text_analysis import TextAnalysisSnapshot, TextSpan
 from editorial_tres.domain.work import Work
 
 
 FindingSeverity = Literal["info", "warning", "error"]
+DiagnosticAxis = Literal[
+    "legacy",
+    "normative_correction",
+    "literary_alignment",
+]
+EditorialClassification = Literal[
+    "verified_error",
+    "inconsistency",
+    "probable_issue",
+    "stylistic_suggestion",
+    "authorial_choice",
+]
+
+
+class EditorialCriterion(BaseModel):
+    """Versioned authority used to explain one editorial diagnosis."""
+
+    criterion_id: str
+    criterion_version: str
+
+    model_config = {"frozen": True}
+
+    @field_validator("criterion_id", "criterion_version")
+    @classmethod
+    def _required_identity(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("El criterio y su versión son obligatorios.")
+        return value.strip()
+
+
+class ReplacementProposal(BaseModel):
+    """One immutable textual alternative; it is not an accepted Patch."""
+
+    replacement_text: str
+    rationale: str
+
+    model_config = {"frozen": True}
+
+    @field_validator("rationale")
+    @classmethod
+    def _required_rationale(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("La propuesta debe explicar su fundamento.")
+        return value.strip()
+
+
+class TextualFindingBinding(BaseModel):
+    """Exact PT-0 snapshot and span used as evidence by one finding."""
+
+    snapshot: TextAnalysisSnapshot
+    span: TextSpan
+
+    model_config = {"frozen": True}
+
+    @model_validator(mode="after")
+    def _span_belongs_to_snapshot(self) -> "TextualFindingBinding":
+        try:
+            canonical_span = self.snapshot.span(self.span.span_id)
+        except KeyError as exc:
+            raise ValueError(
+                "El span del hallazgo no pertenece al snapshot declarado."
+            ) from exc
+        if canonical_span != self.span:
+            raise ValueError(
+                "El span del hallazgo no coincide exactamente con el snapshot."
+            )
+        return self
+
+
+def _diagnostic_finding_id(
+    *,
+    reviewer_id: str,
+    finding_type: str,
+    tenant_id: TenantId,
+    editorial_id: EditorialId,
+    work_id: WorkId,
+    branch: str,
+    source_version: int,
+    target_id: str,
+    related_target_ids: Tuple[str, ...],
+    diagnostic_axis: DiagnosticAxis,
+    editorial_classification: EditorialClassification,
+    criterion: EditorialCriterion,
+    evidence: str,
+    text_binding: TextualFindingBinding | None,
+    replacement_proposals: Tuple[ReplacementProposal, ...],
+) -> str:
+    payload = {
+        "reviewer_id": reviewer_id.strip(),
+        "finding_type": finding_type.strip(),
+        "scope": {
+            "tenant_id": tenant_id.value,
+            "editorial_id": editorial_id.value,
+            "work_id": work_id.value,
+            "branch": branch.strip(),
+            "source_version": source_version,
+            "target_id": target_id.strip(),
+            "related_target_ids": [
+                value.strip() for value in related_target_ids
+            ],
+        },
+        "diagnostic_axis": diagnostic_axis,
+        "editorial_classification": editorial_classification,
+        "criterion": criterion.model_dump(mode="json"),
+        "span": (
+            {
+                "snapshot_id": text_binding.snapshot.snapshot_id,
+                "span_id": text_binding.span.span_id,
+                "kind": text_binding.span.kind,
+                "block_id": text_binding.span.block_id,
+                "start": text_binding.span.start,
+                "end": text_binding.span.end,
+            }
+            if text_binding is not None
+            else None
+        ),
+        "evidence": evidence.strip(),
+        "replacement_proposals": [
+            proposal.model_dump(mode="json")
+            for proposal in replacement_proposals
+        ],
+    }
+    digest = hashlib.sha256(canonical_json(payload).encode("utf-8")).hexdigest()
+    return f"finding-{digest[:32]}"
 
 
 class ReviewFinding(BaseModel):
@@ -31,6 +157,12 @@ class ReviewFinding(BaseModel):
     evidence: str
     description: str
     recommended_action: str | None = None
+    diagnostic_axis: DiagnosticAxis = "legacy"
+    editorial_classification: EditorialClassification | None = None
+    criterion: EditorialCriterion | None = None
+    certainty: float | None = Field(default=None, ge=0.0, le=1.0)
+    text_binding: TextualFindingBinding | None = None
+    replacement_proposals: Tuple[ReplacementProposal, ...] = ()
 
     model_config = {"frozen": True}
 
@@ -66,6 +198,164 @@ class ReviewFinding(BaseModel):
             return None
         normalized = value.strip()
         return normalized or None
+
+    @field_validator("replacement_proposals")
+    @classmethod
+    def _unique_replacements(
+        cls, proposals: Tuple[ReplacementProposal, ...]
+    ) -> Tuple[ReplacementProposal, ...]:
+        replacements = tuple(proposal.replacement_text for proposal in proposals)
+        if len(replacements) != len(set(replacements)):
+            raise ValueError("Las propuestas no pueden repetir el mismo reemplazo.")
+        return proposals
+
+    @model_validator(mode="after")
+    def _diagnostic_contract(self) -> "ReviewFinding":
+        diagnostic_metadata = (
+            self.editorial_classification is not None
+            or self.criterion is not None
+            or self.certainty is not None
+            or self.text_binding is not None
+            or bool(self.replacement_proposals)
+        )
+        if self.diagnostic_axis == "legacy":
+            if diagnostic_metadata:
+                raise ValueError(
+                    "Un hallazgo legacy no puede declarar metadatos del contrato PC-0."
+                )
+            return self
+
+        if (
+            self.editorial_classification is None
+            or self.criterion is None
+            or self.certainty is None
+        ):
+            raise ValueError(
+                "Un diagnóstico editorial debe declarar clasificación, criterio y certeza."
+            )
+
+        if self.text_binding is not None:
+            snapshot = self.text_binding.snapshot
+            span = self.text_binding.span
+            same_scope = (
+                snapshot.tenant_id == self.tenant_id
+                and snapshot.editorial_id == self.editorial_id
+                and snapshot.work_id == self.work_id
+                and snapshot.branch_id == self.branch
+                and snapshot.source_manuscript_version == self.source_version
+            )
+            if not same_scope:
+                raise ValueError(
+                    "El vínculo textual está obsoleto o pertenece a otro alcance editorial."
+                )
+            if span.block_id != self.target_id:
+                raise ValueError(
+                    "El span exacto debe pertenecer al bloque objetivo del hallazgo."
+                )
+            if span.evidence != self.evidence:
+                raise ValueError(
+                    "La evidencia del hallazgo debe coincidir exactamente con su span."
+                )
+
+        if any(
+            proposal.replacement_text == self.evidence
+            for proposal in self.replacement_proposals
+        ):
+            raise ValueError(
+                "Una propuesta debe producir un cambio textual efectivo."
+            )
+
+        expected_id = _diagnostic_finding_id(
+            reviewer_id=self.reviewer_id,
+            finding_type=self.finding_type,
+            tenant_id=self.tenant_id,
+            editorial_id=self.editorial_id,
+            work_id=self.work_id,
+            branch=self.branch,
+            source_version=self.source_version,
+            target_id=self.target_id,
+            related_target_ids=self.related_target_ids,
+            diagnostic_axis=self.diagnostic_axis,
+            editorial_classification=self.editorial_classification,
+            criterion=self.criterion,
+            evidence=self.evidence,
+            text_binding=self.text_binding,
+            replacement_proposals=self.replacement_proposals,
+        )
+        if self.finding_id != expected_id:
+            raise ValueError(
+                "El finding_id no corresponde al diagnóstico editorial declarado."
+            )
+        return self
+
+    @classmethod
+    def diagnostic(
+        cls,
+        *,
+        reviewer_id: str,
+        finding_type: str,
+        tenant_id: TenantId,
+        editorial_id: EditorialId,
+        work_id: WorkId,
+        source_version: int,
+        target_id: str,
+        severity: FindingSeverity,
+        evidence: str,
+        description: str,
+        diagnostic_axis: Literal[
+            "normative_correction",
+            "literary_alignment",
+        ],
+        editorial_classification: EditorialClassification,
+        criterion: EditorialCriterion,
+        certainty: float,
+        branch: str = "main",
+        related_target_ids: Tuple[str, ...] = (),
+        recommended_action: str | None = None,
+        text_binding: TextualFindingBinding | None = None,
+        replacement_proposals: Tuple[ReplacementProposal, ...] = (),
+    ) -> "ReviewFinding":
+        """Build a fully governed PC-0 finding with deterministic identity."""
+
+        finding_id = _diagnostic_finding_id(
+            reviewer_id=reviewer_id,
+            finding_type=finding_type,
+            tenant_id=tenant_id,
+            editorial_id=editorial_id,
+            work_id=work_id,
+            branch=branch,
+            source_version=source_version,
+            target_id=target_id,
+            related_target_ids=related_target_ids,
+            diagnostic_axis=diagnostic_axis,
+            editorial_classification=editorial_classification,
+            criterion=criterion,
+            evidence=evidence,
+            text_binding=text_binding,
+            replacement_proposals=replacement_proposals,
+        )
+        return cls(
+            finding_id=finding_id,
+            reviewer_id=reviewer_id,
+            finding_type=finding_type,
+            tenant_id=tenant_id,
+            editorial_id=editorial_id,
+            work_id=work_id,
+            branch=branch,
+            source_version=source_version,
+            target_id=target_id,
+            related_target_ids=related_target_ids,
+            severity=severity,
+            evidence=evidence,
+            description=description,
+            recommended_action=recommended_action,
+            diagnostic_axis=diagnostic_axis,
+            editorial_classification=editorial_classification,
+            criterion=criterion,
+            certainty=certainty,
+            text_binding=text_binding,
+            replacement_proposals=replacement_proposals,
+        )
 
 
 class Reviewer(ABC):

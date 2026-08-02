@@ -340,6 +340,13 @@ Se ha implementado y validado el piloto de análisis textual trazable en españo
 - Generación de `TextAnalysisSnapshot` inmutables, deterministas y reproducibles ligados a una versión material del manuscrito.
 - Validación lingüística estricta para garantizar la coherencia de textos en español.
 
+### Trazabilidad y alineación de hallazgos editoriales (Corte PC-0)
+
+Se ha completado y validado el contrato trazable de hallazgos de diagnóstico editorial (`test_editorial_diagnostic_findings.py`):
+- Estructuración rigurosa de `ReviewFinding` con referencias cruzadas precisas a sus correspondientes `TextSpan` para correcciones y alineación de estilo literario.
+- Soporte completo para hallazgos de tokens, oraciones y párrafos anidados.
+- Garantías de inmutabilidad profunda y trazabilidad absoluta contra la revisión material del manuscrito analizado.
+
 No abrir todavía workflow executor general, providers, jueces probabilísticos, factoría visual, scheduler, UI, API ni TRES.APP.
 
 ## Frontera de producto
