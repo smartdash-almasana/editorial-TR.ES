@@ -10,6 +10,7 @@ from editorial_tres.domain.graphs.narrative import NarrativeGraph
 from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
 from editorial_tres.domain.proofreading import (
     BUILTIN_ORTHOTYPOGRAPHIC_RULES,
+    ContextualAccentCorrection,
     LexicalCorrection,
     SpanishOrthotypographicCorrector,
 )
@@ -78,6 +79,27 @@ def _lexical(
         source_token=source,
         replacement_text=replacement,
         rationale="El nombre propio lleva tilde en español.",
+        criterion=EditorialCriterion(
+            criterion_id=criterion_id,
+            criterion_version="1.0.0",
+        ),
+    )
+
+
+def _contextual(
+    *,
+    source: str = "tenia",
+    replacement: str = "tenía",
+    left: tuple[str, ...] = ("desde", "que"),
+    right: tuple[str, ...] = ("quince", "años"),
+    criterion_id: str = "oro.pc4.contextual-accent.tenia-quince",
+) -> ContextualAccentCorrection:
+    return ContextualAccentCorrection(
+        source_token=source,
+        replacement_text=replacement,
+        left_anchor_tokens=left,
+        right_anchor_tokens=right,
+        rationale="El contexto exige la forma verbal con tilde.",
         criterion=EditorialCriterion(
             criterion_id=criterion_id,
             criterion_version="1.0.0",
@@ -175,6 +197,122 @@ def test_lexical_correction_matches_only_the_exact_canonical_token() -> None:
     assert _replacement(findings[0]) == "Jesús"
 
 
+@pytest.mark.parametrize(
+    ("source", "correction", "expected"),
+    (
+        (
+            "Tomás trabajaba desde que tenia quince años.",
+            _contextual(),
+            "tenía",
+        ),
+        (
+            "No sabía con exactitud cuantos años habían pasado.",
+            _contextual(
+                source="cuantos",
+                replacement="cuántos",
+                left=("con", "exactitud"),
+                right=("años",),
+                criterion_id="oro.pc4.contextual-accent.cuantos-anos",
+            ),
+            "cuántos",
+        ),
+        (
+            "Terminó de decir lo que tenia que decir.",
+            _contextual(
+                left=("lo", "que"),
+                right=("que", "decir"),
+                criterion_id="oro.pc4.contextual-accent.tenia-que-decir",
+            ),
+            "tenía",
+        ),
+        (
+            "Entre ambos se aprende donde queda la casa.",
+            _contextual(
+                source="donde",
+                replacement="dónde",
+                left=("se", "aprende"),
+                right=("queda", "la", "casa"),
+                criterion_id="oro.pc4.contextual-accent.donde-queda-casa",
+            ),
+            "dónde",
+        ),
+    ),
+)
+def test_contextual_accent_requires_declared_adjacent_sentence_anchors(
+    source: str,
+    correction: ContextualAccentCorrection,
+    expected: str,
+) -> None:
+    snapshot = _snapshot(source)
+    corrector = SpanishOrthotypographicCorrector(
+        contextual_accent_corrections=(correction,)
+    )
+
+    findings = corrector.analyze(snapshot)
+
+    assert len(findings) == 1
+    assert findings[0].finding_type == "orthography.contextual_accent_correction"
+    assert findings[0].text_binding.span.kind == "token"
+    assert findings[0].evidence == correction.source_token
+    assert _replacement(findings[0]) == expected
+    assert findings[0].criterion == correction.criterion
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "La tenia adulta puede afectar el intestino.",
+        "Trabajaron cuantos días quisieron.",
+        "El muelle donde trabaja Tomás queda lejos.",
+    ),
+)
+def test_contextual_accents_preserve_valid_unaccented_controls(
+    source: str,
+) -> None:
+    corrections = (
+        _contextual(),
+        _contextual(
+            source="cuantos",
+            replacement="cuántos",
+            left=("con", "exactitud"),
+            right=("años",),
+            criterion_id="oro.pc4.contextual-accent.cuantos-anos",
+        ),
+        _contextual(
+            source="donde",
+            replacement="dónde",
+            left=("se", "aprende"),
+            right=("queda", "la", "casa"),
+            criterion_id="oro.pc4.contextual-accent.donde-queda-casa",
+        ),
+    )
+
+    findings = SpanishOrthotypographicCorrector(
+        contextual_accent_corrections=corrections
+    ).analyze(_snapshot(source))
+
+    assert findings == ()
+
+
+def test_contextual_anchors_cannot_cross_sentence_boundaries() -> None:
+    correction = _contextual(left=("desde", "que"), right=("quince", "años"))
+    snapshot = _snapshot("Llegó desde que. tenia quince años.")
+
+    findings = SpanishOrthotypographicCorrector(
+        contextual_accent_corrections=(correction,)
+    ).analyze(snapshot)
+
+    assert findings == ()
+
+
+def test_contextual_correction_rejects_unbounded_or_non_token_configuration() -> None:
+    with pytest.raises(ValidationError, match="al menos un ancla"):
+        _contextual(left=(), right=())
+
+    with pytest.raises(ValidationError, match="token exacto"):
+        _contextual(left=("desde que",))
+
+
 def test_lexical_correction_rejects_phrases_and_noop_replacements() -> None:
     with pytest.raises(ValidationError, match="único token exacto"):
         _lexical(source="a ver", replacement="haber")
@@ -184,8 +322,10 @@ def test_lexical_correction_rejects_phrases_and_noop_replacements() -> None:
 
 
 def test_registry_is_explicit_unique_versioned_and_immutable() -> None:
+    contextual = _contextual()
     corrector = SpanishOrthotypographicCorrector(
-        lexical_corrections=(_lexical(),)
+        lexical_corrections=(_lexical(),),
+        contextual_accent_corrections=(contextual,),
     )
     identities = tuple(
         (criterion.criterion_id, criterion.criterion_version)
@@ -193,10 +333,12 @@ def test_registry_is_explicit_unique_versioned_and_immutable() -> None:
     )
 
     assert len(BUILTIN_ORTHOTYPOGRAPHIC_RULES) == 4
-    assert len(identities) == 5
+    assert len(identities) == 6
     assert len(identities) == len(set(identities))
     with pytest.raises(ValidationError):
         BUILTIN_ORTHOTYPOGRAPHIC_RULES[0].description = "Alterada."
+    with pytest.raises(ValidationError):
+        contextual.right_anchor_tokens = ("otra",)
 
 
 def test_registry_rejects_duplicate_sources_and_criterion_identities() -> None:
@@ -216,6 +358,28 @@ def test_registry_rejects_duplicate_sources_and_criterion_identities() -> None:
     with pytest.raises(ValidationError, match="identidades de criterio"):
         SpanishOrthotypographicCorrector(
             lexical_corrections=(duplicate_builtin_criterion,)
+        )
+
+    with pytest.raises(ValidationError, match="fuente y anclas"):
+        SpanishOrthotypographicCorrector(
+            contextual_accent_corrections=(
+                _contextual(),
+                _contextual(
+                    criterion_id="oro.pc4.contextual-accent.duplicate"
+                ),
+            )
+        )
+
+    with pytest.raises(ValidationError, match="global y contextual"):
+        SpanishOrthotypographicCorrector(
+            lexical_corrections=(
+                _lexical(
+                    source="tenia",
+                    replacement="tenía",
+                    criterion_id="oro.lexicon.tenia",
+                ),
+            ),
+            contextual_accent_corrections=(_contextual(),),
         )
 
 

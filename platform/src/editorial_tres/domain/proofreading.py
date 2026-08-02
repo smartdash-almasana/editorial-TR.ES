@@ -73,6 +73,62 @@ class LexicalCorrection(BaseModel):
         return self
 
 
+class ContextualAccentCorrection(BaseModel):
+    """One exact-token accent correction guarded by adjacent sentence tokens."""
+
+    source_token: str
+    replacement_text: str
+    left_anchor_tokens: tuple[str, ...] = ()
+    right_anchor_tokens: tuple[str, ...] = ()
+    rationale: str
+    criterion: EditorialCriterion
+
+    model_config = {"frozen": True}
+
+    @field_validator("source_token", "replacement_text", "rationale")
+    @classmethod
+    def _required_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError(
+                "La corrección contextual requiere valores no vacíos."
+            )
+        return normalized
+
+    @field_validator("left_anchor_tokens", "right_anchor_tokens")
+    @classmethod
+    def _exact_anchor_tokens(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(token.strip() for token in value)
+        if any(
+            not token or any(character.isspace() for character in token)
+            for token in normalized
+        ):
+            raise ValueError(
+                "Cada ancla contextual debe ser un token exacto no vacío."
+            )
+        return normalized
+
+    @model_validator(mode="after")
+    def _effective_bounded_context(self) -> "ContextualAccentCorrection":
+        if any(character.isspace() for character in self.source_token):
+            raise ValueError(
+                "La fuente contextual debe ser un único token exacto."
+            )
+        if any(character.isspace() for character in self.replacement_text):
+            raise ValueError(
+                "El reemplazo contextual debe ser un único token exacto."
+            )
+        if self.source_token == self.replacement_text:
+            raise ValueError(
+                "La corrección contextual debe producir un cambio efectivo."
+            )
+        if not self.left_anchor_tokens and not self.right_anchor_tokens:
+            raise ValueError(
+                "La corrección contextual requiere al menos un ancla declarada."
+            )
+        return self
+
+
 BUILTIN_ORTHOTYPOGRAPHIC_RULES: tuple[OrthotypographicRule, ...] = (
     OrthotypographicRule(
         rule_key="repeated_horizontal_whitespace",
@@ -130,10 +186,35 @@ def _correct_sentence(rule_key: RuleKey, text: str) -> str:
     raise AssertionError(f"Regla ortotipográfica desconocida: {rule_key}")
 
 
+def _matches_adjacent_context(
+    *,
+    tokens: tuple[TextSpan, ...],
+    token_index: int,
+    correction: ContextualAccentCorrection,
+) -> bool:
+    left_size = len(correction.left_anchor_tokens)
+    right_size = len(correction.right_anchor_tokens)
+    if token_index < left_size or token_index + right_size >= len(tokens):
+        return False
+
+    left = tuple(
+        token.evidence for token in tokens[token_index - left_size : token_index]
+    )
+    right = tuple(
+        token.evidence
+        for token in tokens[token_index + 1 : token_index + right_size + 1]
+    )
+    return (
+        left == correction.left_anchor_tokens
+        and right == correction.right_anchor_tokens
+    )
+
+
 class SpanishOrthotypographicCorrector(BaseModel):
     """Emit traceable proposals without mutating or patching the manuscript."""
 
     lexical_corrections: tuple[LexicalCorrection, ...] = ()
+    contextual_accent_corrections: tuple[ContextualAccentCorrection, ...] = ()
 
     model_config = {"frozen": True}
 
@@ -145,9 +226,33 @@ class SpanishOrthotypographicCorrector(BaseModel):
                 "Las correcciones léxicas no pueden repetir el token fuente exacto."
             )
 
-        criteria = tuple(
-            rule.criterion for rule in BUILTIN_ORTHOTYPOGRAPHIC_RULES
-        ) + tuple(item.criterion for item in self.lexical_corrections)
+        contextual_signatures = tuple(
+            (
+                item.source_token,
+                item.left_anchor_tokens,
+                item.right_anchor_tokens,
+            )
+            for item in self.contextual_accent_corrections
+        )
+        if len(contextual_signatures) != len(set(contextual_signatures)):
+            raise ValueError(
+                "Las correcciones contextuales no pueden repetir fuente y anclas."
+            )
+        contextual_sources = {
+            item.source_token for item in self.contextual_accent_corrections
+        }
+        if set(sources) & contextual_sources:
+            raise ValueError(
+                "Un token fuente no puede tener corrección léxica global y contextual."
+            )
+
+        criteria = (
+            tuple(rule.criterion for rule in BUILTIN_ORTHOTYPOGRAPHIC_RULES)
+            + tuple(item.criterion for item in self.lexical_corrections)
+            + tuple(
+                item.criterion for item in self.contextual_accent_corrections
+            )
+        )
         criterion_ids = tuple(item.criterion_id for item in criteria)
         if len(criterion_ids) != len(set(criterion_ids)):
             raise ValueError(
@@ -166,9 +271,13 @@ class SpanishOrthotypographicCorrector(BaseModel):
     def rule_registry(self) -> tuple[EditorialCriterion, ...]:
         """Expose the immutable, ordered criterion registry."""
 
-        return tuple(
-            rule.criterion for rule in BUILTIN_ORTHOTYPOGRAPHIC_RULES
-        ) + tuple(item.criterion for item in self.lexical_corrections)
+        return (
+            tuple(rule.criterion for rule in BUILTIN_ORTHOTYPOGRAPHIC_RULES)
+            + tuple(item.criterion for item in self.lexical_corrections)
+            + tuple(
+                item.criterion for item in self.contextual_accent_corrections
+            )
+        )
 
     def analyze(
         self, snapshot: TextAnalysisSnapshot
@@ -260,6 +369,49 @@ class SpanishOrthotypographicCorrector(BaseModel):
                             finding,
                         )
                     )
+
+            for sentence in block.sentences:
+                sentence_tokens = tuple(
+                    token
+                    for token in block.tokens
+                    if sentence.start <= token.start
+                    and token.end <= sentence.end
+                )
+                for token_index, token in enumerate(sentence_tokens):
+                    for correction in self.contextual_accent_corrections:
+                        if token.evidence != correction.source_token:
+                            continue
+                        if not _matches_adjacent_context(
+                            tokens=sentence_tokens,
+                            token_index=token_index,
+                            correction=correction,
+                        ):
+                            continue
+                        finding = self._finding(
+                            snapshot=snapshot,
+                            span=token,
+                            reviewer_id=(
+                                "proofreader.spanish-contextual-accent.v1"
+                            ),
+                            finding_type=(
+                                "orthography.contextual_accent_correction"
+                            ),
+                            criterion=correction.criterion,
+                            description=(
+                                "El token coincide con una corrección de tilde "
+                                "y con sus anclas contextuales gobernadas."
+                            ),
+                            rationale=correction.rationale,
+                            replacement_text=correction.replacement_text,
+                        )
+                        ordered_findings.append(
+                            (
+                                block_ordinal,
+                                token.start,
+                                correction.criterion.criterion_id,
+                                finding,
+                            )
+                        )
 
         ordered_findings.sort(key=lambda item: item[:3])
         return tuple(item[3] for item in ordered_findings)

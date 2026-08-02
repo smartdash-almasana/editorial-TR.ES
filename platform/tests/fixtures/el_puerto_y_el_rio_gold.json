@@ -15,8 +15,8 @@
   "adjudication": {
     "status": "complete_for_this_controlled_corpus",
     "expected_error_count": 20,
-    "supported_by_existing_configuration_count": 13,
-    "unsupported_or_uncovered_count": 7,
+    "supported_by_existing_configuration_count": 17,
+    "unsupported_or_uncovered_count": 3,
     "scope": "normative Spanish correction only",
     "exclusions": [
       "Christian genre",
@@ -90,14 +90,23 @@
     {
       "case_id": "PC3-E004",
       "category": "orthography.contextual_accent",
-      "rule_family": "unsupported_contextual_lexical_disambiguation",
-      "support_status": "unsupported",
+      "rule_family": "governed_adjacent_sentence_token_context",
+      "support_status": "supported",
       "start": 388,
       "end": 393,
       "source_fragment": "tenia",
       "replacement_fragment": "tenía",
       "adjudication": "verified_error",
-      "reason": "La corrección exacta global produciría falsos positivos sobre el sustantivo válido «tenia»."
+      "configuration": {
+        "kind": "contextual_accent",
+        "source_token": "tenia",
+        "replacement_text": "tenía",
+        "left_anchor_tokens": ["desde", "que"],
+        "right_anchor_tokens": ["quince", "años"],
+        "rationale": "En «desde que tenía quince años», «tenía» es una forma verbal y lleva tilde.",
+        "criterion_id": "oro.pc4.contextual-accent.tenia-quince",
+        "criterion_version": "1.0.0"
+      }
     },
     {
       "case_id": "PC3-E005",
@@ -121,14 +130,23 @@
     {
       "case_id": "PC3-E006",
       "category": "orthography.contextual_accent",
-      "rule_family": "unsupported_contextual_lexical_disambiguation",
-      "support_status": "unsupported",
+      "rule_family": "governed_adjacent_sentence_token_context",
+      "support_status": "supported",
       "start": 434,
       "end": 441,
       "source_fragment": "cuantos",
       "replacement_fragment": "cuántos",
       "adjudication": "verified_error",
-      "reason": "La tilde depende del valor interrogativo; «cuantos» también puede ser relativo válido."
+      "configuration": {
+        "kind": "contextual_accent",
+        "source_token": "cuantos",
+        "replacement_text": "cuántos",
+        "left_anchor_tokens": ["con", "exactitud"],
+        "right_anchor_tokens": ["años"],
+        "rationale": "La construcción introduce una interrogativa indirecta y exige «cuántos».",
+        "criterion_id": "oro.pc4.contextual-accent.cuantos-anos",
+        "criterion_version": "1.0.0"
+      }
     },
     {
       "case_id": "PC3-E007",
@@ -268,14 +286,23 @@
     {
       "case_id": "PC3-E015",
       "category": "orthography.contextual_accent",
-      "rule_family": "unsupported_contextual_lexical_disambiguation",
-      "support_status": "unsupported",
+      "rule_family": "governed_adjacent_sentence_token_context",
+      "support_status": "supported",
       "start": 2296,
       "end": 2301,
       "source_fragment": "tenia",
       "replacement_fragment": "tenía",
       "adjudication": "verified_error",
-      "reason": "La corrección exacta global produciría falsos positivos sobre el sustantivo válido «tenia»."
+      "configuration": {
+        "kind": "contextual_accent",
+        "source_token": "tenia",
+        "replacement_text": "tenía",
+        "left_anchor_tokens": ["lo", "que"],
+        "right_anchor_tokens": ["que", "decir"],
+        "rationale": "En «lo que tenía que decir», «tenía» es una forma verbal y lleva tilde.",
+        "criterion_id": "oro.pc4.contextual-accent.tenia-que-decir",
+        "criterion_version": "1.0.0"
+      }
     },
     {
       "case_id": "PC3-E016",
@@ -360,14 +387,23 @@
     {
       "case_id": "PC3-E020",
       "category": "orthography.contextual_accent",
-      "rule_family": "unsupported_contextual_lexical_disambiguation",
-      "support_status": "unsupported",
+      "rule_family": "governed_adjacent_sentence_token_context",
+      "support_status": "supported",
       "start": 3287,
       "end": 3292,
       "source_fragment": "donde",
       "replacement_fragment": "dónde",
       "adjudication": "verified_error",
-      "reason": "La tilde depende del valor interrogativo indirecto; «donde» también es relativo válido."
+      "configuration": {
+        "kind": "contextual_accent",
+        "source_token": "donde",
+        "replacement_text": "dónde",
+        "left_anchor_tokens": ["se", "aprende"],
+        "right_anchor_tokens": ["queda", "la", "casa"],
+        "rationale": "La construcción introduce una interrogativa indirecta y exige «dónde».",
+        "criterion_id": "oro.pc4.contextual-accent.donde-queda-casa",
+        "criterion_version": "1.0.0"
+      }
     }
   ],
   "negative_controls": [

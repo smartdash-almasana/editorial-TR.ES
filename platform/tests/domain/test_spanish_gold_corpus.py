@@ -17,6 +17,7 @@ from editorial_tres.domain.graphs.knowledge import KnowledgeGraph
 from editorial_tres.domain.graphs.narrative import NarrativeGraph
 from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
 from editorial_tres.domain.proofreading import (
+    ContextualAccentCorrection,
     LexicalCorrection,
     SpanishOrthotypographicCorrector,
 )
@@ -98,6 +99,18 @@ def _correctors(gold: dict[str, Any]):
         for item in configurations
         if item["kind"] == "lexical"
     )
+    contextual_accent = tuple(
+        ContextualAccentCorrection(
+            source_token=item["source_token"],
+            replacement_text=item["replacement_text"],
+            left_anchor_tokens=tuple(item["left_anchor_tokens"]),
+            right_anchor_tokens=tuple(item["right_anchor_tokens"]),
+            rationale=item["rationale"],
+            criterion=_criterion(item),
+        )
+        for item in configurations
+        if item["kind"] == "contextual_accent"
+    )
     agreement = tuple(
         SimpleAgreementRule(
             singular_subject=item["singular_subject"],
@@ -111,7 +124,10 @@ def _correctors(gold: dict[str, Any]):
         if item["kind"] == "agreement"
     )
     return (
-        SpanishOrthotypographicCorrector(lexical_corrections=lexical),
+        SpanishOrthotypographicCorrector(
+            lexical_corrections=lexical,
+            contextual_accent_corrections=contextual_accent,
+        ),
         SpanishGrammarCorrector(agreement_rules=agreement),
     )
 
@@ -175,8 +191,16 @@ def test_pc3_gold_corpus_measures_supported_and_unsupported_cases() -> None:
     unsupported = [
         case for case in errors if case["support_status"] == "unsupported"
     ]
-    assert len(supported) == 13
-    assert len(unsupported) == 7
+    assert (
+        len(supported)
+        == gold["adjudication"]["supported_by_existing_configuration_count"]
+        == 17
+    )
+    assert (
+        len(unsupported)
+        == gold["adjudication"]["unsupported_or_uncovered_count"]
+        == 3
+    )
 
     supported_by_criterion = {
         case["configuration"]["criterion_id"]: case for case in supported
@@ -191,7 +215,7 @@ def test_pc3_gold_corpus_measures_supported_and_unsupported_cases() -> None:
     assert detected_ids == set(supported_by_criterion)
     assert omitted_supported_ids == set()
     assert unexpected_ids == set()
-    assert len(findings) == 13
+    assert len(findings) == 17
 
     for criterion_id, case in supported_by_criterion.items():
         finding = findings_by_criterion[criterion_id]
@@ -201,7 +225,7 @@ def test_pc3_gold_corpus_measures_supported_and_unsupported_cases() -> None:
         assert finding.target_id == gold["source"]["block_id"]
         assert binding.span == snapshot.span(binding.span.span_id)
         assert binding.span.start <= case["start"] < case["end"] <= binding.span.end
-        if case["configuration"]["kind"] == "lexical":
+        if case["configuration"]["kind"] in {"lexical", "contextual_accent"}:
             assert binding.span.start == case["start"]
             assert binding.span.end == case["end"]
             assert finding.evidence == case["source_fragment"]
