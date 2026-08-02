@@ -360,6 +360,21 @@ Se ha implementado y validado `SpanishOrthotypographicCorrector` (`test_spanish_
 
 Certificación local: 16 pruebas focales, 40 pruebas vecinas y 366 pruebas de suite estricta en verde; guard y postflight `PASS`. Estado operativo: `CLOSED_PASS`.
 
+### Corrector gramatical español determinístico (Corte PC-2)
+
+Se ha implementado y validado `SpanishGrammarCorrector` (`test_spanish_grammar_corrector.py`):
+
+- analiza un `TextAnalysisSnapshot` inmutable y produce únicamente `ReviewFinding` gramaticales;
+- registra criterios únicos y versionados, con orden determinístico por posición de lectura e identidad del criterio;
+- detecta secuencias incompatibles de clítico indirecto más clítico directo;
+- detecta la construcción gobernada «a pesar que» y propone «a pesar de que»;
+- señala formas plurales de `haber` impersonal sólo en construcciones existenciales estrechamente delimitadas y las clasifica como `probable_issue`;
+- admite concordancia simple sujeto-verbo mediante pares singulares/plurales explícitos y configurables;
+- distingue `verified_error` de `probable_issue` y vincula toda evidencia a spans canónicos de oración de `PT-0`;
+- no modifica `Work`, no crea `Patch`, no aplica correcciones y no pretende implementar un parser gramatical general.
+
+Certificación local: 21 pruebas focales, 56 pruebas vecinas y 387 pruebas de suite estricta en verde; preflight y postflight del guard `PASS`. Estado operativo: `CLOSED_PASS`.
+
 No abrir todavía workflow executor general, providers, jueces probabilísticos, factoría visual, scheduler, UI, API ni TRES.APP.
 
 ## Frontera de producto

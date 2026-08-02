@@ -81,3 +81,30 @@ Construir el primer corrector ortográfico y ortotipográfico determinístico, s
 ### Decisión
 
 El corrector ortográfico y ortotipográfico determinístico v1 concluyó en verde. Produce hallazgos normativos trazables y ordenados sobre spans canónicos, conserva propuestas inmutables y no aplica cambios automáticamente. El ciclo PC-1 queda cerrado y certificado conforme a `ops/ACTIVE_TASK.yaml`.
+
+## PC-2
+
+Estado: CLOSED_PASS
+
+### Commit base
+
+`9d80e85c159ff4e8d8f803d359ae902150cd203f`
+
+### Objetivo
+
+Construir un corrector gramatical español determinístico, sin dependencias y trazable sobre spans canónicos de `PT-0`, con separación explícita entre errores verificados y problemas probables, sin modificar la obra ni aplicar correcciones automáticamente.
+
+### Exclusiones preservadas
+
+`AGENTS.md`, `tools/verify_active_task.py` y los cuatro laboratorios preexistentes permanecen congelados y fuera del corte.
+
+### Verificaciones
+
+- spanish-grammar-corrector-focal: 21 passed (0.69s)
+- spanish-grammar-corrector-neighbor: 56 passed (0.85s)
+- platform-suite-strict: 387 passed (16.05s)
+- ACTIVE_TASK preflight y postflight: PASS
+
+### Decisión
+
+El corrector gramatical español determinístico v1 concluyó en verde. Detecta construcciones gramaticales explícitamente gobernadas, distingue `verified_error` de `probable_issue`, produce hallazgos trazables y ordenados sobre spans canónicos y no aplica cambios automáticamente. El ciclo PC-2 queda cerrado y certificado conforme a `ops/ACTIVE_TASK.yaml`.
