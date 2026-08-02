@@ -53,3 +53,31 @@ Construir un contrato de hallazgos de diagnóstico editorial (`ReviewFinding`) t
 ### Decisión
 
 La validación y la vinculación trazable de hallazgos editoriales diagnósticos con spans de análisis de texto en español concluyeron exitosamente en verde. El ciclo PC-0 queda cerrado y certificado conforme a `ops/ACTIVE_TASK.yaml`.
+
+## PC-1
+
+Estado: CLOSED_PASS
+
+### Commit base
+
+`e1a3abbdf40e7dfa4143a5fa99d38331a7aa79d2`
+
+### Objetivo
+
+Construir el primer corrector ortográfico y ortotipográfico determinístico, sin dependencias y trazable sobre spans canónicos de `PT-0`, con propuestas inmutables que no modifican la obra ni crean `Patch` automáticamente.
+
+### Exclusiones preservadas
+
+`AGENTS.md`, `tools/verify_active_task.py` y los cuatro laboratorios preexistentes permanecen congelados y fuera del corte.
+
+### Verificaciones
+
+- spanish-orthotypographic-corrector-focal: 16 passed (0.64s)
+- spanish-orthotypographic-corrector-neighbor: 40 passed (0.75s)
+- platform-suite-strict: 366 passed (13.77s)
+- git-diff-check: PASS
+- ACTIVE_TASK postflight: PASS
+
+### Decisión
+
+El corrector ortográfico y ortotipográfico determinístico v1 concluyó en verde. Produce hallazgos normativos trazables y ordenados sobre spans canónicos, conserva propuestas inmutables y no aplica cambios automáticamente. El ciclo PC-1 queda cerrado y certificado conforme a `ops/ACTIVE_TASK.yaml`.

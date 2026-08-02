@@ -4,7 +4,7 @@
 
 Documento operativo. Debe reflejar únicamente capacidades verificadas en el repositorio.
 
-Fecha de corte: 2026-08-01.
+Fecha de corte: 2026-08-02.
 
 ## Regla de lectura
 
@@ -346,6 +346,19 @@ Se ha completado y validado el contrato trazable de hallazgos de diagnóstico ed
 - Estructuración rigurosa de `ReviewFinding` con referencias cruzadas precisas a sus correspondientes `TextSpan` para correcciones y alineación de estilo literario.
 - Soporte completo para hallazgos de tokens, oraciones y párrafos anidados.
 - Garantías de inmutabilidad profunda y trazabilidad absoluta contra la revisión material del manuscrito analizado.
+
+### Corrector ortográfico y ortotipográfico determinístico (Corte PC-1)
+
+Se ha implementado y validado `SpanishOrthotypographicCorrector` (`test_spanish_orthotypographic_corrector.py`):
+
+- analiza un `TextAnalysisSnapshot` inmutable y produce únicamente `ReviewFinding` normativos;
+- registra criterios únicos y versionados, con orden determinístico por posición de lectura e identidad del criterio;
+- detecta espacios horizontales repetidos, espacios antes de puntuación de cierre, espacios ausentes después de coma, punto y coma o dos puntos, y espacios interiores en comillas angulares;
+- admite correcciones léxicas exactas y configurables destinadas a entradas gobernadas del Archivo Oro;
+- vincula evidencia y propuestas a spans canónicos de oración, párrafo o token de `PT-0`;
+- no modifica `Work`, no crea `Patch`, no aplica correcciones y no infiere todavía gramática ni alineación literaria.
+
+Certificación local: 16 pruebas focales, 40 pruebas vecinas y 366 pruebas de suite estricta en verde; guard y postflight `PASS`. Estado operativo: `CLOSED_PASS`.
 
 No abrir todavía workflow executor general, providers, jueces probabilísticos, factoría visual, scheduler, UI, API ni TRES.APP.
 
