@@ -332,6 +332,14 @@ Se ha completado y validado el piloto editorial privado de extremo a extremo (`t
 - Proyección de la obra aprobada a `EditionSnapshot` inmutable, empaquetado a `AppBookPackage` v1 estático determinista (con checksums SHA-256) y renderizado estático a HTML legible.
 - Se conserva como pendiente (fuera de este alcance) la transición persistente de `Work` a un estado `approved` rígido en base de datos.
 
+### Análisis textual trazable y snapshots en español (Corte PT-0)
+
+Se ha implementado y validado el piloto de análisis textual trazable en español (`test_text_analysis.py`):
+- Estructura inmutable de `TextSpan` para modelar párrafos, oraciones y tokens con coordenadas de caracteres e índices ordinales deterministas.
+- Agrupación por `AnalyzedBlock` para verificar consistencia sintáctica, anidamiento estructural (oraciones dentro de párrafos, tokens dentro de oraciones) y congruencia de evidencia de texto exacta.
+- Generación de `TextAnalysisSnapshot` inmutables, deterministas y reproducibles ligados a una versión material del manuscrito.
+- Validación lingüística estricta para garantizar la coherencia de textos en español.
+
 No abrir todavía workflow executor general, providers, jueces probabilísticos, factoría visual, scheduler, UI, API ni TRES.APP.
 
 ## Frontera de producto
