@@ -29,6 +29,14 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e "./platform[dev]"
 
+      - name: Compile every Python module
+        working-directory: platform
+        run: python -m compileall -q src
+
+      - name: Run executable CLI subprocess test
+        working-directory: platform
+        run: python -m pytest tests/test_private_factory_cli.py -q
+
       - name: Run platform suite
         working-directory: platform
         run: python -m pytest -q

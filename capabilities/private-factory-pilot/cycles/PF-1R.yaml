@@ -1,0 +1,64 @@
+schema_version: editorial.tres/cycle-v1
+id: PF-1R
+capability: editorial.private-factory-pilot
+objective: repair_and_unify_executable_private_editorial_factory
+status: LOCAL_CERTIFIED_PENDING_CI
+
+reopens: PF-1
+reason:
+  - private_factory_cli_contained_literal_diff_markers_and_did_not_import
+  - executable_path_bypassed_persistent_application_composition
+  - project_identity_outputs_decisions_and_final_approval_were_not_generic_or_fully_human_governed
+
+scope:
+  - compile_every_python_module
+  - execute_cli_through_real_subprocess
+  - read_project_yaml_as_runtime_authority
+  - derive_work_id_and_output_names_from_project_id
+  - emit_invalid_pending_decision_templates
+  - require_exact_external_final_approval
+  - persist_events_findings_decisions_and_edition_approval_in_sqlite
+  - compile_pdf_app_book_and_html_from_one_edition_snapshot
+  - preserve_paragraph_boundaries_as_addressable_app_book_blocks
+  - require_green_github_actions_before_closure
+
+excluded:
+  - epub
+  - kindle
+  - app_book_reader
+  - multi_source_composition
+  - new_correctors
+  - new_llm_providers
+  - plugin_or_kernel_redesign
+
+verification:
+  - name: active-task-preflight
+    result: PASS
+    evidence: 17_task_changes_and_9_frozen_preexisting_changes_respected
+  - name: python-modules-compile
+    result: PASS
+    evidence: included_in_platform_suite_strict
+  - name: private-factory-cli-subprocess
+    result: PASS
+    evidence: 2_passed_without_warnings_after_deterministic_sqlite_close_fix
+  - name: private-factory-focal
+    result: PASS
+    evidence: covered_by_417_test_strict_platform_suite
+  - name: private-factory-real-manuscript
+    result: PASS
+    evidence: covered_by_417_test_strict_platform_suite
+  - name: platform-suite-strict
+    result: PASS
+    evidence: 417_passed_0_failed_0_warnings_in_37_65_seconds
+  - name: github-actions-platform-strict
+    result: PENDING_PUBLISHED_SHA
+
+permissions:
+  commit: true
+  push: true
+
+completion:
+  requires_all_verification: true
+  evidence_update: local_certification_recorded
+  github_actions_required: true
+  advance_next_cycle: false

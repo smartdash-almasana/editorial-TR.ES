@@ -6,10 +6,11 @@ import hashlib
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Iterable, Literal
+from typing import Any, Iterable, Literal
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
+from editorial_tres.application.app_book_compiler import AppBookCompiler, AppBookPackage
 from editorial_tres.application.commands import (
     AddContentBlockCommand,
     ApplyApprovedPatchCommand,
@@ -36,14 +37,17 @@ from editorial_tres.domain.finding_decisions import FindingDecision
 from editorial_tres.domain.grammar import SpanishGrammarCorrector
 from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
 from editorial_tres.domain.proofreading import SpanishOrthotypographicCorrector
+from editorial_tres.domain.review_history import ReviewHistory
 from editorial_tres.domain.reviews import ReviewFinding
 from editorial_tres.domain.text_analysis import SpanishTextAnalyzer, TextAnalysisSnapshot
 from editorial_tres.domain.work import Work
+from editorial_tres.infrastructure.html_edition_renderer import HtmlEditionRenderer
 from editorial_tres.infrastructure.memory.event_store import MemoryEventStore
 from editorial_tres.infrastructure.pdf_edition_renderer import PdfEditionRenderer
 
 
 _CHAPTER = re.compile(r"^CAPÍTULO\s+([IVXLCDM]+)$", flags=re.IGNORECASE)
+_PARAGRAPH_BREAK = re.compile(r"\n[ \t]*\n+")
 
 
 class ManuscriptChapter(BaseModel):
@@ -62,6 +66,16 @@ class ManuscriptChapter(BaseModel):
         if not value or not value.strip():
             raise ValueError("Cada capítulo debe conservar etiqueta, título y contenido.")
         return value.strip()
+
+    @property
+    def paragraphs(self) -> tuple[str, ...]:
+        """Preserve paragraph boundaries without interpreting literary semantics."""
+
+        return tuple(
+            paragraph
+            for paragraph in _PARAGRAPH_BREAK.split(self.body)
+            if paragraph.strip()
+        )
 
 
 class ParsedManuscript(BaseModel):
@@ -150,11 +164,81 @@ class EditorialDecisionInput(BaseModel):
         return value.strip()
 
 
+class EditionApprovalInput(BaseModel):
+    """Human publication authorization bound to one exact prepared Work."""
+
+    approval_id: str
+    work_id: str
+    source_work_version: int = Field(ge=1)
+    source_manuscript_version: int = Field(ge=1)
+    status: Literal["approved"]
+    actor_id: str
+    reason: str
+    decided_at: datetime
+
+    model_config = {"frozen": True}
+
+    @field_validator("approval_id", "work_id", "actor_id", "reason")
+    @classmethod
+    def _required_approval_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("La aprobación final requiere identidad, actor y fundamento.")
+        return normalized
+
+    def approve(self, work: Work) -> EditionApproval:
+        if (
+            self.work_id != work.work_id.value
+            or self.source_work_version != work.version
+            or self.source_manuscript_version != work.manuscript_version
+        ):
+            raise ValueError("La aprobación no corresponde al snapshot editorial preparado.")
+        return EditionApproval.for_work(
+            work,
+            approval_id=self.approval_id,
+        ).approve(
+            actor_id=ActorId(value=self.actor_id),
+            reason=self.reason,
+            decided_at=self.decided_at,
+        )
+
+
 @dataclass(frozen=True)
 class PrivateFactoryReviewResult:
     manuscript: ParsedManuscript
     analysis: TextAnalysisSnapshot
     findings: tuple[ReviewFinding, ...]
+    reviewed_work: Work
+
+
+@dataclass(frozen=True)
+class PrivateFactoryPreparedResult:
+    manuscript: ParsedManuscript
+    analysis: TextAnalysisSnapshot
+    findings: tuple[ReviewFinding, ...]
+    decisions: tuple[FindingDecision, ...]
+    final_work: Work
+    pending_approval: EditionApproval
+
+    @property
+    def accepted_count(self) -> int:
+        return sum(decision.status == "accepted" for decision in self.decisions)
+
+    @property
+    def rejected_count(self) -> int:
+        return sum(decision.status == "rejected" for decision in self.decisions)
+
+    def approval_template(self) -> dict[str, object]:
+        return {
+            "approval_id": self.pending_approval.approval_id,
+            "work_id": self.pending_approval.work_id.value,
+            "source_work_version": self.pending_approval.source_work_version,
+            "source_manuscript_version": self.pending_approval.source_manuscript_version,
+            "status": None,
+            "actor_id": "",
+            "reason": "",
+            "decided_at": None,
+        }
 
 
 @dataclass(frozen=True)
@@ -165,7 +249,10 @@ class PrivateFactoryResult:
     decisions: tuple[FindingDecision, ...]
     final_work: Work
     master_edition: EditionSnapshot
+    app_book: AppBookPackage
+    html: str
     pdf_bytes: bytes
+    edition_approval: EditionApproval
 
     @property
     def accepted_count(self) -> int:
@@ -177,15 +264,32 @@ class PrivateFactoryResult:
 
 
 class PrivateEditorialFactory:
-    """Run one governed manuscript from ingestion to master edition and PDF."""
+    """Govern a persistent manuscript from ingestion to public derivatives."""
 
-    def __init__(self) -> None:
-        self._parser = PlainTextManuscriptParser()
-        self._analyzer = SpanishTextAnalyzer()
-        self._orthotypographic = SpanishOrthotypographicCorrector()
-        self._grammar = SpanishGrammarCorrector()
-        self._projector = EditionProjector()
-        self._pdf_renderer = PdfEditionRenderer()
+    def __init__(
+        self,
+        *,
+        event_store: Any | None = None,
+        work_projection: CurrentWorkProjection | None = None,
+        parser: PlainTextManuscriptParser | None = None,
+        analyzer: SpanishTextAnalyzer | None = None,
+        orthotypographic: SpanishOrthotypographicCorrector | None = None,
+        grammar: SpanishGrammarCorrector | None = None,
+        projector: EditionProjector | None = None,
+        app_book_compiler: AppBookCompiler | None = None,
+        html_renderer: HtmlEditionRenderer | None = None,
+        pdf_renderer: PdfEditionRenderer | None = None,
+    ) -> None:
+        self._store = event_store if event_store is not None else MemoryEventStore()
+        self._projection = work_projection or CurrentWorkProjection()
+        self._parser = parser or PlainTextManuscriptParser()
+        self._analyzer = analyzer or SpanishTextAnalyzer()
+        self._orthotypographic = orthotypographic or SpanishOrthotypographicCorrector()
+        self._grammar = grammar or SpanishGrammarCorrector()
+        self._projector = projector or EditionProjector()
+        self._app_book_compiler = app_book_compiler or AppBookCompiler()
+        self._html_renderer = html_renderer or HtmlEditionRenderer()
+        self._pdf_renderer = pdf_renderer or PdfEditionRenderer()
 
     def review(
         self,
@@ -195,24 +299,32 @@ class PrivateEditorialFactory:
         editorial_id: EditorialId,
         work_id: WorkId,
         actor_id: ActorId,
+        language: str = "es",
     ) -> PrivateFactoryReviewResult:
         manuscript = self._parser.parse(source)
-        _, _, work = self._ingest(
+        work = self._load_or_ingest(
             manuscript,
             tenant_id=tenant_id,
             editorial_id=editorial_id,
             work_id=work_id,
             actor_id=actor_id,
+            language=language,
         )
         analysis = self._analyzer.analyze(work, branch_id="main")
         findings = self._analyze(analysis)
+        reviewed_work = self._persist_findings(
+            work,
+            findings=findings,
+            actor_id=actor_id,
+        )
         return PrivateFactoryReviewResult(
             manuscript=manuscript,
             analysis=analysis,
             findings=findings,
+            reviewed_work=reviewed_work,
         )
 
-    def process(
+    def prepare(
         self,
         source: str,
         *,
@@ -220,31 +332,35 @@ class PrivateEditorialFactory:
         editorial_id: EditorialId,
         work_id: WorkId,
         actor_id: ActorId,
-        author: str | None = None,
+        language: str = "es",
         decisions: Iterable[EditorialDecisionInput] = (),
         decided_at: datetime | None = None,
-    ) -> PrivateFactoryResult:
+    ) -> PrivateFactoryPreparedResult:
         manuscript = self._parser.parse(source)
-        store, projection, work = self._ingest(
+        work = self._load_or_ingest(
             manuscript,
             tenant_id=tenant_id,
             editorial_id=editorial_id,
             work_id=work_id,
             actor_id=actor_id,
+            language=language,
         )
         analysis = self._analyzer.analyze(work, branch_id="main")
         findings = self._analyze(analysis)
+        reviewed_work = self._persist_findings(
+            work,
+            findings=findings,
+            actor_id=actor_id,
+        )
+        timestamp = decided_at or datetime.now(timezone.utc)
         resolved = self._resolve_decisions(
             findings,
             decisions=tuple(decisions),
             actor_id=actor_id,
-            decided_at=decided_at or datetime.now(timezone.utc),
+            decided_at=timestamp,
         )
-        decided_work = self._persist_review(
-            store,
-            projection,
-            work,
-            findings=findings,
+        decided_work = self._persist_decisions(
+            reviewed_work,
             decisions=resolved,
             actor_id=actor_id,
         )
@@ -254,23 +370,62 @@ class PrivateEditorialFactory:
             if decision.status == "accepted"
         )
         final_work = self._apply_accepted(
-            store,
-            projection,
             decided_work,
             accepted=accepted,
             actor_id=actor_id,
-            decided_at=decided_at or datetime.now(timezone.utc),
+            decided_at=timestamp,
         )
-        edition_approval = EditionApproval.for_work(
+        pending_approval = EditionApproval.for_work(
             final_work,
             approval_id=f"edition-approval.{final_work.work_id.value}.v1",
-        ).approve(
-            actor_id=actor_id,
-            reason="Revisión editorial resuelta; se autoriza la edición maestra.",
-            decided_at=decided_at or datetime.now(timezone.utc),
         )
-        public_metadata = {
-            "publisher": "Editorial TR.ES",
+        return PrivateFactoryPreparedResult(
+            manuscript=manuscript,
+            analysis=analysis,
+            findings=findings,
+            decisions=resolved,
+            final_work=final_work,
+            pending_approval=pending_approval,
+        )
+
+    def publish(
+        self,
+        source: str,
+        *,
+        tenant_id: TenantId,
+        editorial_id: EditorialId,
+        work_id: WorkId,
+        actor_id: ActorId,
+        approval: EditionApprovalInput,
+        language: str = "es",
+        author: str | None = None,
+        publisher: str = "Editorial TR.ES",
+    ) -> PrivateFactoryResult:
+        manuscript = self._parser.parse(source)
+        final_work = self._load_existing(
+            manuscript,
+            tenant_id=tenant_id,
+            editorial_id=editorial_id,
+            work_id=work_id,
+            language=language,
+        )
+        history = ReviewHistory.replay(
+            self._store.get_events(tenant_id, editorial_id, work_id)
+        )
+        unresolved = history.unresolved_findings()
+        if unresolved:
+            raise ValueError("La obra todavía contiene findings sin decisión editorial.")
+
+        edition_approval = approval.approve(final_work)
+        self._store.save_edition_approval(edition_approval)
+        persisted_approval = self._store.get_edition_approval(
+            edition_approval.approval_id
+        )
+        if persisted_approval != edition_approval:
+            raise RuntimeError("La aprobación editorial final no pudo persistirse.")
+
+        public_metadata: dict[str, object] = {
+            "publisher": publisher.strip() or "Editorial TR.ES",
             "source_sha256": manuscript.source_sha256,
             "chapter_count": len(manuscript.chapters),
             "word_count": manuscript.word_count,
@@ -282,17 +437,27 @@ class PrivateEditorialFactory:
             edition_id=f"edition.{final_work.work_id.value}.v1",
             edition_version=1,
             public_metadata=public_metadata,
-            approval=edition_approval,
+            approval=persisted_approval,
         )
+        app_book = self._app_book_compiler.compile(master)
+        html = self._html_renderer.render(master)
         pdf_bytes = self._pdf_renderer.render(master)
+        findings = tuple(history.findings.values())
+        decisions = tuple(
+            history.decisions[finding.finding_id]
+            for finding in findings
+        )
         return PrivateFactoryResult(
             manuscript=manuscript,
-            analysis=analysis,
+            analysis=self._analyzer.analyze(final_work, branch_id="main"),
             findings=findings,
-            decisions=resolved,
+            decisions=decisions,
             final_work=final_work,
             master_edition=master,
+            app_book=app_book,
+            html=html,
             pdf_bytes=pdf_bytes,
+            edition_approval=persisted_approval,
         )
 
     def _analyze(
@@ -313,74 +478,185 @@ class PrivateEditorialFactory:
             )
         )
 
-    @staticmethod
-    def _ingest(
+    def _load_or_ingest(
+        self,
         manuscript: ParsedManuscript,
         *,
         tenant_id: TenantId,
         editorial_id: EditorialId,
         work_id: WorkId,
         actor_id: ActorId,
-    ) -> tuple[MemoryEventStore, CurrentWorkProjection, Work]:
-        store = MemoryEventStore()
-        projection = CurrentWorkProjection()
-        result = CreateWorkHandler(store, projection).handle(
-            CreateWorkCommand(
-                command_id=f"factory-create.{work_id.value}",
-                idempotency_key=f"factory-create.{work_id.value}",
+        language: str,
+    ) -> Work:
+        events = self._store.get_events(tenant_id, editorial_id, work_id)
+        if events:
+            return self._load_existing(
+                manuscript,
                 tenant_id=tenant_id,
                 editorial_id=editorial_id,
                 work_id=work_id,
-                actor_id=actor_id,
-                title=manuscript.title,
-                language="es",
+                language=language,
             )
+        return self._ingest(
+            manuscript,
+            tenant_id=tenant_id,
+            editorial_id=editorial_id,
+            work_id=work_id,
+            actor_id=actor_id,
+            language=language,
         )
-        version = result.version
-        add = AddContentBlockHandler(store, projection)
+
+    def _load_existing(
+        self,
+        manuscript: ParsedManuscript,
+        *,
+        tenant_id: TenantId,
+        editorial_id: EditorialId,
+        work_id: WorkId,
+        language: str,
+    ) -> Work:
+        events = self._store.get_events(tenant_id, editorial_id, work_id)
+        if not events:
+            raise ValueError("La obra todavía no fue ingerida en la factoría persistente.")
+        work = Work.replay(events)
+        hashes = {
+            str(block.metadata.get("source_sha256"))
+            for block in work.expression_graph.blocks.values()
+            if block.metadata.get("source_sha256") is not None
+        }
+        if hashes != {manuscript.source_sha256}:
+            raise ValueError("La fuente actual no coincide con la obra persistida.")
+        if work.language != language.strip():
+            raise ValueError("El idioma actual no coincide con la obra persistida.")
+        self._projection.rebuild_work(events)
+        return work
+
+    def _ingest(
+        self,
+        manuscript: ParsedManuscript,
+        *,
+        tenant_id: TenantId,
+        editorial_id: EditorialId,
+        work_id: WorkId,
+        actor_id: ActorId,
+        language: str,
+    ) -> Work:
+        import uuid
+        from editorial_tres.domain.commits import EditorialCommit
+        from editorial_tres.domain.events import create_work_created_event, create_content_block_added_event
+        from pydantic import BaseModel
+
+        now = datetime.now(timezone.utc)
+        events = []
+
+        created_event = create_work_created_event(
+            event_id=f"evt-{uuid.uuid4().hex[:16]}",
+            tenant_id=tenant_id,
+            editorial_id=editorial_id,
+            work_id=work_id,
+            title=manuscript.title,
+            language=language,
+            actor_id=actor_id,
+            occurred_at=now,
+        )
+        events.append(created_event)
+
+        version = 1
         for chapter in manuscript.chapters:
             chapter_id = f"chapter-{chapter.ordinal:02d}"
-            for block_id, block_type, content, parent_id, position, metadata in (
+            blocks = [
                 (
                     chapter_id,
                     "heading",
                     f"{chapter.label}\n{chapter.title}",
                     None,
                     chapter.ordinal - 1,
-                    {"chapter_ordinal": chapter.ordinal},
-                ),
-                (
-                    f"{chapter_id}-body",
-                    "paragraph",
-                    chapter.body,
-                    chapter_id,
-                    0,
-                    {"chapter_ordinal": chapter.ordinal},
-                ),
-            ):
-                result = add.handle(
-                    AddContentBlockCommand(
-                        command_id=f"factory-add.{block_id}",
-                        idempotency_key=f"factory-add.{block_id}",
-                        tenant_id=tenant_id,
-                        editorial_id=editorial_id,
-                        work_id=work_id,
-                        actor_id=actor_id,
-                        expected_version=version,
-                        block_id=block_id,
-                        block_type=block_type,
-                        content=content,
-                        parent_id=parent_id,
-                        position=position,
-                        language="es",
-                        status="revised",
-                        metadata=metadata,
-                    )
+                    {
+                        "chapter_ordinal": chapter.ordinal,
+                        "source_sha256": manuscript.source_sha256,
+                    },
                 )
-                version = result.version
-        return store, projection, Work.replay(
-            store.get_events(tenant_id, editorial_id, work_id)
+            ]
+            blocks.extend(
+                (
+                    f"{chapter_id}-paragraph-{paragraph_ordinal:03d}",
+                    "paragraph",
+                    paragraph,
+                    chapter_id,
+                    paragraph_ordinal - 1,
+                    {
+                        "chapter_ordinal": chapter.ordinal,
+                        "paragraph_ordinal": paragraph_ordinal,
+                        "source_sha256": manuscript.source_sha256,
+                    },
+                )
+                for paragraph_ordinal, paragraph in enumerate(
+                    chapter.paragraphs,
+                    start=1,
+                )
+            )
+            for block_id, block_type, content, parent_id, position, metadata in blocks:
+                version += 1
+                block = {
+                    "id": block_id,
+                    "block_type": block_type,
+                    "content": content,
+                    "parent_id": parent_id,
+                    "position": position,
+                    "language": language,
+                    "status": "revised",
+                    "metadata": dict(metadata),
+                }
+                event = create_content_block_added_event(
+                    event_id=f"evt-{uuid.uuid4().hex[:16]}",
+                    tenant_id=tenant_id,
+                    editorial_id=editorial_id,
+                    work_id=work_id,
+                    aggregate_version=version,
+                    actor_id=actor_id,
+                    occurred_at=now,
+                    block=block,
+                )
+                events.append(event)
+
+        commit = EditorialCommit(
+            commit_id=f"commit-{uuid.uuid4().hex[:16]}",
+            tenant_id=tenant_id,
+            editorial_id=editorial_id,
+            work_id=work_id,
+            branch="main",
+            parent_commit_id=None,
+            events=tuple(events),
+            message=f"Ingestión por lote: {manuscript.title}",
+            actor_id=actor_id,
+            created_at=now,
         )
+
+        class IngestCommand(BaseModel):
+            tenant_id: str
+            editorial_id: str
+            work_id: str
+            title: str
+
+        dummy_cmd = IngestCommand(
+            tenant_id=tenant_id.value,
+            editorial_id=editorial_id.value,
+            work_id=work_id.value,
+            title=manuscript.title,
+        )
+        cmd_hash = hashlib.sha256(dummy_cmd.model_dump_json().encode()).hexdigest()
+
+        self._store.append_commit(
+            commit,
+            idempotency_key=f"factory-ingest.{work_id.value}",
+            command_type="IngestCommand",
+            payload_hash=cmd_hash,
+        )
+        self._projection.rebuild_work(
+            self._store.get_events(tenant_id, editorial_id, work_id),
+            branch="main",
+        )
+        return Work.replay(self._store.get_events(tenant_id, editorial_id, work_id))
 
     @staticmethod
     def _resolve_decisions(
@@ -418,20 +694,32 @@ class PrivateEditorialFactory:
             )
         return tuple(resolved)
 
-    @staticmethod
-    def _persist_review(
-        store: MemoryEventStore,
-        projection: CurrentWorkProjection,
+    def _persist_findings(
+        self,
         work: Work,
         *,
         findings: tuple[ReviewFinding, ...],
-        decisions: tuple[FindingDecision, ...],
         actor_id: ActorId,
     ) -> Work:
+        history = ReviewHistory.replay(
+            self._store.get_events(work.tenant_id, work.editorial_id, work.work_id)
+        )
         version = work.version
-        record = RecordReviewFindingHandler(store, projection)
-        decide = DecideReviewFindingHandler(store, projection)
+        record = RecordReviewFindingHandler(self._store, self._projection)
         for finding in findings:
+            existing = history.get_finding(finding.finding_id)
+            if existing is not None:
+                if (
+                    existing.finding_id != finding.finding_id
+                    or existing.reviewer_id != finding.reviewer_id
+                    or existing.finding_type != finding.finding_type
+                    or existing.target_id != finding.target_id
+                    or existing.evidence != finding.evidence
+                ):
+                    raise ValueError(
+                        f"El finding '{finding.finding_id}' cambió respecto del persistido."
+                    )
+                continue
             result = record.handle(
                 RecordReviewFindingCommand(
                     command_id=f"factory-record.{finding.finding_id}",
@@ -445,7 +733,34 @@ class PrivateEditorialFactory:
                 )
             )
             version = result.version
+        return Work.replay(
+            self._store.get_events(work.tenant_id, work.editorial_id, work.work_id)
+        )
+
+    def _persist_decisions(
+        self,
+        work: Work,
+        *,
+        decisions: tuple[FindingDecision, ...],
+        actor_id: ActorId,
+    ) -> Work:
+        history = ReviewHistory.replay(
+            self._store.get_events(work.tenant_id, work.editorial_id, work.work_id)
+        )
+        version = work.version
+        decide = DecideReviewFindingHandler(self._store, self._projection)
         for decision in decisions:
+            existing = history.get_decision(decision.finding_id)
+            if existing is not None:
+                if (
+                    existing.status != decision.status
+                    or existing.reason != decision.reason
+                    or existing.decided_by != decision.decided_by
+                ):
+                    raise ValueError(
+                        f"El finding '{decision.finding_id}' ya posee otra decisión."
+                    )
+                continue
             result = decide.handle(
                 DecideReviewFindingCommand(
                     command_id=f"factory-decide.{decision.decision_id}",
@@ -460,13 +775,11 @@ class PrivateEditorialFactory:
             )
             version = result.version
         return Work.replay(
-            store.get_events(work.tenant_id, work.editorial_id, work.work_id)
+            self._store.get_events(work.tenant_id, work.editorial_id, work.work_id)
         )
 
-    @staticmethod
     def _apply_accepted(
-        store: MemoryEventStore,
-        projection: CurrentWorkProjection,
+        self,
         work: Work,
         *,
         accepted: tuple[AcceptedFindingDecision, ...],
@@ -488,7 +801,7 @@ class PrivateEditorialFactory:
             reason="Aplicar únicamente correcciones revisadas y aceptadas.",
             decided_at=decided_at,
         )
-        ApplyApprovedPatchHandler(store, projection).handle(
+        ApplyApprovedPatchHandler(self._store, self._projection).handle(
             ApplyApprovedPatchCommand(
                 command_id="factory-apply-approved-corrections.v1",
                 idempotency_key="factory-apply-approved-corrections.v1",
@@ -502,5 +815,5 @@ class PrivateEditorialFactory:
             )
         )
         return Work.replay(
-            store.get_events(work.tenant_id, work.editorial_id, work.work_id)
+            self._store.get_events(work.tenant_id, work.editorial_id, work.work_id)
         )

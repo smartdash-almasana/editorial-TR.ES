@@ -28,7 +28,7 @@ El piloto editorial de extremo a extremo concluyó de forma impecable en verde, 
 
 ## PF-1
 
-Estado: CLOSED_PASS
+Estado: REOPENED_BY_PF-1R
 
 ### Objetivo
 
@@ -68,4 +68,36 @@ Procesar un manuscrito completo en texto plano mediante el núcleo real: ingesta
 
 ### Decisión
 
-PF-1 queda cerrado. Editorial TR.ES ya demuestra sobre una obra completa el recorrido hasta edición maestra y PDF; EPUB/Kindle y App Book Reader continúan fuera de este corte.
+El cierre de PF-1 fue revocado por PF-1R: la evidencia interna de PDF se conserva como antecedente, pero no certifica el ejecutable publicado.
+
+
+## PF-1R
+
+Estado: LOCAL_CERTIFIED_PENDING_CI
+
+### Motivo de reapertura
+
+Se confirmó que `private_factory_cli.py` contenía marcadores literales de diff y no era Python válido. El recorrido interno utilizaba además una factoría en memoria paralela, identidad de obra fija, decisiones preaceptadas y aprobación final autocreada.
+
+### Reparación implementada
+
+- CLI genérico gobernado por `project.yaml`, con `work_id` y salidas derivados de `project_id`.
+- `compose_application()` y `SQLiteEventStore` como composición productiva del ejecutable.
+- Revisión, findings, decisiones y aprobación final reanudables entre procesos.
+- Plantillas de decisiones y aprobación deliberadamente pendientes e inválidas hasta intervención humana.
+- Aprobación final externa ligada a versiones global y material exactas y persistida en SQLite.
+- Un único `EditionSnapshot` como fuente de PDF, App Book Package y HTML.
+- Capítulos fragmentados en encabezados y párrafos direccionables, sin reescritura del texto.
+- Test de compilación de todos los módulos, subprocess real del CLI y paso equivalente en GitHub Actions.
+
+### Certificación local
+
+- Guard de `ACTIVE_TASK`: PASS; 17 cambios de PF-1R detectados y 9 cambios preexistentes congelados preservados.
+- Validación focal de cierre SQLite: 3 passed, 0 warnings, 7.39s.
+- Suite estricta de plataforma con warnings como errores: 417 passed, 0 failed, 0 skipped, 0 warnings, 37.65s.
+- El CLI real por subprocess, la compilación de módulos, el manifiesto, la factoría, SQLite, App Book, HTML y el manuscrito real quedaron cubiertos por la suite certificada.
+- Se corrigió el contrato de `append_commit()` para usar `payload_hash` y se cerró determinísticamente la conexión SQLite auxiliar del test del CLI mediante `contextlib.closing`.
+
+### Publicación pendiente
+
+La certificación local autoriza integrar y publicar el cambio. PF-1R permanece `LOCAL_CERTIFIED_PENDING_CI` y no podrá marcarse `CLOSED_PASS` hasta que GitHub Actions quede verde sobre el SHA publicado.

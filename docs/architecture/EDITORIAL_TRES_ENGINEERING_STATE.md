@@ -276,11 +276,11 @@ bloque/claim
 → invalidación por cambio de fuente
 ```
 
-### EditionCompiler
+### EditionCompiler y derivados públicos
 
-Pendiente como compilador operativo completo.
+El runtime ya proyecta una versión material exactamente aprobada a un `EditionSnapshot` neutral y compila desde ese mismo snapshot PDF, `AppBookPackage` v1 y HTML estático. PF-1R integró estos tres derivados dentro del ejecutable persistente gobernado por `project.yaml`.
 
-La arquitectura exige múltiples ediciones derivadas de la misma obra, pero no debe afirmarse que el runtime actual ya compile PDF, EPUB o AppBookEdition de extremo a extremo.
+Este estado permanece `LOCAL_CERTIFIED_PENDING_CI`: la suite estricta local aprobó 417 pruebas sin fallos ni warnings, pero GitHub Actions todavía debe certificar el SHA publicado. EPUB, Kindle y App Book Reader continúan pendientes y fuera de PF-1R.
 
 ### Reglas determinísticas vs JudgeRule
 
@@ -326,7 +326,11 @@ El Corte 2 — Operaciones estructurales mínimas de Patch queda cerrado y certi
 
 ### Piloto editorial privado y publicación (Corte de integración)
 
-Se ha completado y validado el piloto editorial privado de extremo a extremo (`test_private_editorial_factory_v1.py`):
+PF-1 fue reabierto por PF-1R después de comprobar que su CLI contenía marcadores literales de diff y que el recorrido productivo no utilizaba la persistencia canónica. La demostración interna anterior se conserva como antecedente, no como cierre operativo.
+
+PF-1R implementa un CLI real por subprocess, composición SQLite mediante `compose_application()`, identidad derivada de `project.yaml`, decisiones pendientes, aprobación final externa persistida y salidas PDF/App Book/HTML sobre bloques de párrafo direccionables. La certificación local aprobó 417 pruebas sin fallos ni warnings; el cierre definitivo queda pendiente de GitHub Actions sobre el SHA publicado.
+
+El piloto histórico (`test_private_editorial_factory_v1.py`) sí había demostrado:
 - Generación de `ReviewFinding` y registro de decisiones humanas explícitas (`accepted`/`rejected`).
 - Conversión de findings aceptados a `Patch`, evaluación en `ApprovalGate` y aplicación del parche atómico en el manuscrito, conservando consistencia sin persistencia parcial.
 - Proyección de la obra aprobada a `EditionSnapshot` inmutable, empaquetado a `AppBookPackage` v1 estático determinista (con checksums SHA-256) y renderizado estático a HTML legible.

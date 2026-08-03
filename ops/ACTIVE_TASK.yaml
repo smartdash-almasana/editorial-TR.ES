@@ -1,24 +1,36 @@
 schema_version: 1
-task_id: PF-1
+task_id: PF-1R
 status: active
 mode: implementation
 capability: editorial.private-factory
-cycle_file: capabilities/private-factory-pilot/cycles/PF-1.yaml
-objective: process_complete_plain_text_manuscript_to_reviewed_master_edition_and_pdf_v1
+cycle_file: capabilities/private-factory-pilot/cycles/PF-1R.yaml
+objective: repair_and_unify_executable_private_editorial_factory
 
 allowed_paths:
   - ops/ACTIVE_TASK.yaml
   - capabilities/private-factory-pilot/cycles/PF-1.yaml
+  - capabilities/private-factory-pilot/cycles/PF-1R.yaml
   - capabilities/private-factory-pilot/EVIDENCE.md
-  - platform/pyproject.toml
-  - platform/src/editorial_tres/domain/editorial_passes.py
-  - platform/src/editorial_tres/domain/edition.py
-  - platform/src/editorial_tres/application/edition_projector.py
-  - platform/src/editorial_tres/application/private_factory.py
-  - platform/src/editorial_tres/infrastructure/pdf_edition_renderer.py
+  - docs/architecture/EDITORIAL_TRES_ENGINEERING_STATE.md
+  - .github/workflows/**
   - platform/src/editorial_tres/private_factory_cli.py
+  - platform/src/editorial_tres/composition.py
+  - platform/src/editorial_tres/project_manifest.py
+  - platform/src/editorial_tres/application/private_factory.py
+  - platform/src/editorial_tres/application/app_book_compiler.py
+  - platform/src/editorial_tres/application/edition_projector.py
+  - platform/src/editorial_tres/domain/approvals.py
+  - platform/src/editorial_tres/domain/edition.py
+  - platform/src/editorial_tres/infrastructure/html_edition_renderer.py
+  - platform/src/editorial_tres/infrastructure/memory/event_store.py
+  - platform/src/editorial_tres/infrastructure/sqlite/event_store.py
+  - platform/tests/test_python_modules_compile.py
+  - platform/tests/test_private_factory_cli.py
+  - platform/tests/test_project_manifest.py
   - platform/tests/application/test_private_factory.py
-  - platform/tests/infrastructure/test_pdf_edition_renderer.py
+  - platform/tests/application/test_app_book_compiler.py
+  - platform/tests/infrastructure/test_sqlite_event_store.py
+  - platform/tests/infrastructure/test_html_edition_renderer.py
   - platform/tests/pilots/test_una_luz_extrana_private_factory.py
   - projects/una-luz-extrana-en-buenos-aires/**
   - exports/una-luz-extrana-en-buenos-aires/**
@@ -29,24 +41,29 @@ forbidden_paths:
   - capabilities/textual-analysis/**
   - capabilities/global-repetition/**
   - capabilities/edition-slice/**
-  - docs/**
   - plugins/**
   - constitution/**
-  - .github/**
 
-allowed_new_dependencies:
-  - reportlab>=4.0.0
-dependency_file_changes_authorized: true
+allowed_new_dependencies: []
+dependency_file_changes_authorized: false
 allowed_providers: []
 
 tests:
-  - name: private-factory-real-manuscript
+  - name: python-modules-compile
+    cwd: platform
+    command:
+      - python
+      - -m
+      - compileall
+      - -q
+      - src
+  - name: private-factory-cli-subprocess
     cwd: platform
     command:
       - python
       - -m
       - pytest
-      - tests/pilots/test_una_luz_extrana_private_factory.py
+      - tests/test_private_factory_cli.py
       - -q
   - name: private-factory-focal
     cwd: platform
@@ -55,19 +72,18 @@ tests:
       - -m
       - pytest
       - tests/application/test_private_factory.py
-      - tests/infrastructure/test_pdf_edition_renderer.py
+      - tests/application/test_app_book_compiler.py
+      - tests/infrastructure/test_sqlite_event_store.py
+      - tests/infrastructure/test_html_edition_renderer.py
+      - tests/test_project_manifest.py
       - -q
-  - name: private-factory-neighbor-regression
+  - name: private-factory-real-manuscript
     cwd: platform
     command:
       - python
       - -m
       - pytest
-      - tests/pilots/test_private_editorial_factory_v1.py
-      - tests/application/test_edition_projector.py
-      - tests/domain/test_editorial_passes.py
-      - tests/domain/test_spanish_orthotypographic_corrector.py
-      - tests/domain/test_spanish_grammar_corrector.py
+      - tests/pilots/test_una_luz_extrana_private_factory.py
       - -q
   - name: platform-suite-strict
     cwd: platform
@@ -83,7 +99,7 @@ commit_authorized: true
 push_authorized: true
 
 baseline:
-  head: 04e70ba69f9cd0e259d480c52d9fda195274b789
+  head: b5053cb89ad54801a8dd1ecc31c3d4aef90b4d5e
   preexisting_changes:
     - path: AGENTS.md
       status: '??'

@@ -42,3 +42,31 @@ def test_invalid_project_manifest(tmp_path: Path):
 
     with pytest.raises(InvalidManifestError):
         ProjectManifest.from_yaml(proj_yaml)
+
+
+def test_private_factory_manifest_accepts_project_id_and_resolves_source(tmp_path: Path):
+    project = tmp_path / "book"
+    project.mkdir()
+    source = project / "manuscript.txt"
+    source.write_text("OBRA", encoding="utf-8")
+    (project / "project.yaml").write_text(
+        """
+project_id: book-one
+title: Obra privada
+language: es
+source_file: manuscript.txt
+source_sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+expected_word_count: 1
+expected_chapter_count: 1
+workflow: private-editorial-factory-v1
+""",
+        encoding="utf-8",
+    )
+
+    manifest = ProjectManifest.from_yaml(project)
+
+    assert manifest.id == "book-one"
+    assert manifest.project_id == "book-one"
+    assert manifest.work_id == "work.book-one"
+    assert manifest.output_slug == "book-one"
+    assert manifest.resolve_source_path() == source

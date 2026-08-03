@@ -2,7 +2,7 @@ schema_version: editorial.tres/cycle-v1
 id: PF-1
 capability: editorial.private-factory-pilot
 objective: process_complete_plain_text_manuscript_to_reviewed_master_edition_and_pdf_v1
-status: CLOSED_PASS
+status: REOPENED_BY_PF-1R
 
 allowed_paths:
   - capabilities/private-factory-pilot/**
@@ -67,5 +67,7 @@ deliverables:
 
 completion:
   requires_all_verification: true
-  evidence_update: completed
+  evidence_update: superseded_by_PF-1R
   advance_next_cycle: false
+
+superseded_by: PF-1R

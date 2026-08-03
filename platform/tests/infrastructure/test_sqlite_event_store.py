@@ -19,6 +19,7 @@ from editorial_tres.application.handlers import (
 from editorial_tres.application.projections import CurrentWorkProjection
 from editorial_tres.domain.approvals import ApprovalGate
 from editorial_tres.domain.commits import EditorialCommit
+from editorial_tres.domain.edition import EditionApproval
 from editorial_tres.domain.events import DomainEvent
 from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
 from editorial_tres.domain.patches import (
@@ -606,3 +607,24 @@ def test_nested_patch_metadata_round_trips_through_sqlite_exactly(tmp_path):
             "settings": {"visible": True},
         }
     }
+
+
+def test_persists_exact_edition_approval_between_store_instances(tmp_path):
+    database_path = tmp_path / "events.sqlite"
+    with SQLiteEventStore(database_path) as store:
+        projection = CurrentWorkProjection()
+        CreateWorkHandler(store, projection).handle(_create_work_command())
+        work = Work.replay(store.get_events(TENANT, EDITORIAL, WORK))
+        approval = EditionApproval.for_work(
+            work,
+            approval_id="edition-approval.work.yo-no-soy.v1",
+        ).approve(
+            actor_id=ACTOR,
+            reason="Versión exacta autorizada para publicación.",
+        )
+        store.save_edition_approval(approval)
+
+    with SQLiteEventStore(database_path) as reopened_store:
+        persisted = reopened_store.get_edition_approval(approval.approval_id)
+
+    assert persisted == approval

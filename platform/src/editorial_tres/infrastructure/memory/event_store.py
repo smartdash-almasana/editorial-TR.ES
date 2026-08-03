@@ -2,6 +2,7 @@
 from hashlib import sha256
 from typing import Dict, List, Optional, Tuple
 from editorial_tres.domain.commits import EditorialCommit
+from editorial_tres.domain.edition import EditionApproval
 from editorial_tres.domain.events import DomainEvent
 from editorial_tres.domain.identifiers import EditorialId, TenantId, WorkId
 from editorial_tres.exceptions import ConcurrencyError, DuplicateCommitError, DuplicateEventError, InvalidCommitParentError, IdempotencyConflictError
@@ -12,6 +13,7 @@ class MemoryEventStore:
         self._events: Dict[str, DomainEvent] = {}
         self._branches: Dict[str, List[str]] = {}
         self._idempotency: Dict[Tuple[str, str, str], Tuple[str, str]] = {}
+        self._edition_approvals: Dict[str, EditionApproval] = {}
     def _branch_key(self, tenant_id: TenantId, editorial_id: EditorialId, work_id: WorkId, branch: str = "main") -> str:
         return f"{tenant_id.value}:{editorial_id.value}:{work_id.value}:{branch}"
     def _idempotency_key(self, commit: EditorialCommit, command_type: str, key: str) -> Tuple[str, str, str]:
@@ -53,3 +55,16 @@ class MemoryEventStore:
 
     def branch_exists(self, tenant_id, editorial_id, work_id, branch: str) -> bool:
         return self._branch_key(tenant_id, editorial_id, work_id, branch) in self._branches
+
+    def save_edition_approval(self, approval: EditionApproval) -> None:
+        """Persist one explicit publication approval idempotently."""
+
+        existing = self._edition_approvals.get(approval.approval_id)
+        if existing is not None and existing != approval:
+            raise ValueError(
+                f"La aprobación '{approval.approval_id}' ya existe con otro contenido."
+            )
+        self._edition_approvals[approval.approval_id] = approval
+
+    def get_edition_approval(self, approval_id: str) -> EditionApproval | None:
+        return self._edition_approvals.get(approval_id)

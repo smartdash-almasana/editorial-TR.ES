@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from editorial_tres.domain.commits import EditorialCommit
+from editorial_tres.domain.edition import EditionApproval
 from editorial_tres.domain.events import (
     ContentBlockAdded,
     ContentBlockDeleted,
@@ -125,6 +126,16 @@ class SQLiteEventStore:
                     command_type, idempotency_key
                 ),
                 FOREIGN KEY (commit_id) REFERENCES commits (commit_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS edition_approvals (
+                approval_id TEXT PRIMARY KEY,
+                tenant_id TEXT NOT NULL,
+                editorial_id TEXT NOT NULL,
+                work_id TEXT NOT NULL,
+                source_work_version INTEGER NOT NULL,
+                source_manuscript_version INTEGER NOT NULL,
+                payload_json TEXT NOT NULL
             );
 
             CREATE INDEX IF NOT EXISTS idx_commits_stream
@@ -401,3 +412,47 @@ class SQLiteEventStore:
                 self._stream_values(tenant_id, editorial_id, work_id, branch),
             ).fetchone()
         )
+
+    def save_edition_approval(self, approval: EditionApproval) -> None:
+        """Persist one exact human publication approval idempotently."""
+
+        payload = json.dumps(
+            deep_to_jsonable(approval),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        existing = self._connection.execute(
+            "SELECT payload_json FROM edition_approvals WHERE approval_id = ?",
+            (approval.approval_id,),
+        ).fetchone()
+        if existing is not None:
+            if existing["payload_json"] != payload:
+                raise ValueError(
+                    f"La aprobación '{approval.approval_id}' ya existe con otro contenido."
+                )
+            return
+        self._connection.execute(
+            "INSERT INTO edition_approvals "
+            "(approval_id, tenant_id, editorial_id, work_id, source_work_version, "
+            "source_manuscript_version, payload_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                approval.approval_id,
+                approval.tenant_id.value,
+                approval.editorial_id.value,
+                approval.work_id.value,
+                approval.source_work_version,
+                approval.source_manuscript_version,
+                payload,
+            ),
+        )
+        self._connection.commit()
+
+    def get_edition_approval(self, approval_id: str) -> EditionApproval | None:
+        row = self._connection.execute(
+            "SELECT payload_json FROM edition_approvals WHERE approval_id = ?",
+            (approval_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return EditionApproval.model_validate(json.loads(row["payload_json"]))
