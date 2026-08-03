@@ -39,13 +39,13 @@ Procesar un manuscrito completo en texto plano mediante el núcleo real: ingesta
 - Título: **Una luz extraña en Buenos Aires**.
 - Extensión: 9.000 palabras.
 - Estructura: 9 capítulos, 18 bloques editoriales.
-- SHA-256 de fuente: `7d5bb9d4b4eeb8ed79040fb6394e85891ff159fd21abdffe335fcbb096bceea6`.
+- SHA-256 de fuente: `2aa46a5b780d6729b86ed4429f72a0f2847659531ab5abf19231d0cb3ba9ab6a`.
 - Hallazgos del perfil productivo congelado: 0.
 - Cambios aplicados: 0; el sistema no inventó actividad ni alteró la voz.
 
 ### Salidas
 
-- EditionSnapshot v1: SHA-256 `3789af5dd0fa8f8cd3bed4c2387bbfd0d184b7b09237079f228adca8dc14c44d`.
+- EditionSnapshot v1: SHA-256 `fc8af2fb3c35c38c298c2f61a8da786e94aa27c369f327616f94d6d381b2e7e0`.
 - PDF A5: 68 páginas, 100.112 bytes en la ejecución final de certificación.
 - Informe de factoría JSON con identidad de fuente, métricas y checksum de edición.
 

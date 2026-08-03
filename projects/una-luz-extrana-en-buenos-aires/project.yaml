@@ -4,7 +4,7 @@ title: UNA LUZ EXTRAÑA EN BUENOS AIRES
 publisher: Editorial TR.ES
 language: es
 source_file: manuscript.txt
-source_sha256: 7d5bb9d4b4eeb8ed79040fb6394e85891ff159fd21abdffe335fcbb096bceea6
+source_sha256: 2aa46a5b780d6729b86ed4429f72a0f2847659531ab5abf19231d0cb3ba9ab6a
 expected_word_count: 9000
 expected_chapter_count: 9
 workflow: private-editorial-factory-v1
