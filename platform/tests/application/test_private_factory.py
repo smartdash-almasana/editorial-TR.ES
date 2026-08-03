@@ -63,6 +63,27 @@ def test_parser_preserves_chapters_source_identity_and_paragraph_boundaries():
     assert parsed.chapters[1].body == "La editora volvió al amanecer."
 
 
+def test_parser_imports_markdown_work_title_after_a_chapter_label_without_rewriting_prose():
+    source = """CAPÍTULO I
+
+# El puerto y el río
+
+El puerto despertaba antes que el pueblo.
+
+Sus aguas marrones venían desde muy lejos.
+"""
+
+    parsed = PlainTextManuscriptParser().parse(source)
+
+    assert parsed.title == "El puerto y el río"
+    assert parsed.chapters[0].label == "CAPÍTULO I"
+    assert parsed.chapters[0].title == "El puerto y el río"
+    assert parsed.chapters[0].body == (
+        "El puerto despertaba antes que el pueblo.\n\n"
+        "Sus aguas marrones venían desde muy lejos."
+    )
+
+
 def test_factory_requires_one_explicit_decision_per_finding():
     factory = PrivateEditorialFactory()
     review = factory.review(SOURCE, **SCOPE)

@@ -47,6 +47,7 @@ from editorial_tres.infrastructure.pdf_edition_renderer import PdfEditionRendere
 
 
 _CHAPTER = re.compile(r"^CAPÍTULO\s+([IVXLCDM]+)$", flags=re.IGNORECASE)
+_MARKDOWN_H1 = re.compile(r"^#\s+(.+?)\s*$")
 _PARAGRAPH_BREAK = re.compile(r"\n[ \t]*\n+")
 
 
@@ -100,8 +101,6 @@ class PlainTextManuscriptParser:
         nonempty = [index for index, line in enumerate(lines) if line.strip()]
         if not nonempty:
             raise ValueError("El manuscrito no contiene texto utilizable.")
-        title_index = nonempty[0]
-        title = lines[title_index].strip()
 
         starts = [
             index
@@ -110,6 +109,23 @@ class PlainTextManuscriptParser:
         ]
         if not starts:
             raise ValueError("El manuscrito debe declarar al menos un CAPÍTULO romano.")
+
+        first_chapter_title_line = next(
+            (index for index in range(starts[0] + 1, len(lines)) if lines[index].strip()),
+            None,
+        )
+        markdown_title_line = next(
+            (
+                index
+                for index in (nonempty[0], first_chapter_title_line)
+                if index is not None and _MARKDOWN_H1.fullmatch(lines[index].strip())
+            ),
+            None,
+        )
+        title_index = markdown_title_line if markdown_title_line is not None else nonempty[0]
+        markdown_title = _MARKDOWN_H1.fullmatch(lines[title_index].strip())
+        title = markdown_title.group(1).strip() if markdown_title else lines[title_index].strip()
+
         if any(line.strip() for line in lines[title_index + 1 : starts[0]]):
             raise ValueError("Hay contenido no estructurado entre el título y el primer capítulo.")
 
@@ -123,7 +139,12 @@ class PlainTextManuscriptParser:
             )
             if title_line is None:
                 raise ValueError(f"{label} no declara título ni contenido.")
-            chapter_title = lines[title_line].strip()
+            chapter_title_match = _MARKDOWN_H1.fullmatch(lines[title_line].strip())
+            chapter_title = (
+                chapter_title_match.group(1).strip()
+                if chapter_title_match
+                else lines[title_line].strip()
+            )
             body = "\n".join(lines[title_line + 1 : end]).strip()
             if not body:
                 raise ValueError(f"{label} no contiene cuerpo narrativo.")

@@ -1,92 +1,44 @@
 schema_version: 1
-task_id: PF-1R-CI2
+task_id: PF-2-MD-IMPORT
 status: active
 mode: implementation
-capability: editorial.task-guard
-parent_task: PF-1R
-objective: remove_non_reproducible_temporary_guard_tests
+capability: editorial.private-factory
+parent_task: PF-2
+objective: normalize_markdown_title_and_chapter_import
 
 allowed_paths:
   - ops/ACTIVE_TASK.yaml
-  - platform/tests/test_active_task_guard.py
+  - platform/src/editorial_tres/**
+  - platform/tests/**
 
-forbidden_paths:
-  - AGENTS.md
-  - capabilities/textual-analysis/**
-  - capabilities/global-repetition/**
-  - capabilities/edition-slice/**
-  - capabilities/private-factory-pilot/**
-  - docs/**
-  - platform/src/**
-  - plugins/**
-  - constitution/**
-  - .github/workflows/**
+forbidden_paths: []
 
 allowed_new_dependencies: []
 dependency_file_changes_authorized: false
 allowed_providers: []
 
 tests:
-  - name: active-task-guard-focal
+  - name: private-factory-markdown-regression
     cwd: platform
     command:
       - python
-      - -W
-      - error
       - -m
       - pytest
-      - -o
-      - asyncio_default_fixture_loop_scope=function
-      - tests/test_active_task_guard.py
+      - tests/application/test_private_factory.py
       - -q
-  - name: platform-suite
+  - name: platform-full-suite
     cwd: platform
     command:
       - python
       - -m
       - pytest
-      - -q
-  - name: platform-suite-strict
-    cwd: platform
-    command:
-      - python
-      - -W
-      - error
-      - -m
-      - pytest
-      - -o
-      - asyncio_default_fixture_loop_scope=function
       - -q
 
-commit_authorized: true
-push_authorized: true
+commit_authorized: false
+push_authorized: false
 
 baseline:
-  head: bf606657f710476945c30eca2dee01e6a6c4c6e4
-  allow_parent_head: true
+  head: aa8eaf112f370819ac48accb0364c9fbdeb44874
+  allow_parent_head: false
   allow_absent_preexisting: true
-  preexisting_changes:
-    - path: AGENTS.md
-      status: '??'
-      sha256: ad8e561bc069ff4b92fb9f90d0c7cc64ba881bf6f2327ab8c7266356d714d60c
-    - path: platform/tests/lab_experiment_001_casa_del_rio.py
-      status: '??'
-      sha256: 48ca529e1198f1c86e9a1a8c256d9579ca9728dc8e32d9073282b797e049e1f7
-    - path: platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
-      status: '??'
-      sha256: f8cb2bd6adb256d42345691fdcaa028b35a329618e4a683ea700a7af6723d47b
-    - path: platform/tests/lab_real_text_002_el_perro_mas_listo.py
-      status: '??'
-      sha256: feab13ea4a6e5f244375256c3f2e4a9d3c76703018048db64f44fa70fe2670d3
-    - path: platform/tests/lab_real_text_003_corazon_piedra_verde.py
-      status: '??'
-      sha256: a43ebfb802446d2a37c807b95383346e4f0c82047967cccf48f537271e1ecaf2
-    - path: capabilities/textual-analysis/cycles/LAB-PC-1.yaml
-      status: '??'
-      sha256: 4fcf2c3372cd990afc886a2f6239b82cb4a3d134321edb6de47461a5f3c67bd4
-    - path: capabilities/textual-analysis/labs/LAB-PC-1.md
-      status: '??'
-      sha256: c1abb1e28636fb6594a674d40c90e67256cca5e63c20a2ba11c61b1c9373d248
-    - path: platform/tests/lab_pc_1_spanish_correction_real_text.py
-      status: '??'
-      sha256: 4a05d5105280c6c821cb26f2ffeb795c4ea75ae9b821e6aa23c7f8c4cd8c4347
+  preexisting_changes: []
