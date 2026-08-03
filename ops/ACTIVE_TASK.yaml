@@ -1,14 +1,14 @@
 schema_version: 1
-task_id: PF-1R-CI1
+task_id: PF-1R-CI2
 status: active
 mode: implementation
 capability: editorial.task-guard
 parent_task: PF-1R
-objective: version_and_reproduce_active_task_guard_in_clean_ci_checkout
+objective: remove_non_reproducible_temporary_guard_tests
 
 allowed_paths:
   - ops/ACTIVE_TASK.yaml
-  - tools/verify_active_task.py
+  - platform/tests/test_active_task_guard.py
 
 forbidden_paths:
   - AGENTS.md
@@ -18,7 +18,6 @@ forbidden_paths:
   - capabilities/private-factory-pilot/**
   - docs/**
   - platform/src/**
-  - platform/tests/**
   - plugins/**
   - constitution/**
   - .github/workflows/**
@@ -63,7 +62,7 @@ commit_authorized: true
 push_authorized: true
 
 baseline:
-  head: 2cc60768637af0fc6bb81838cdf2f13dbf608565
+  head: bf606657f710476945c30eca2dee01e6a6c4c6e4
   allow_parent_head: true
   allow_absent_preexisting: true
   preexisting_changes:

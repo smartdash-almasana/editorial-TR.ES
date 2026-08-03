@@ -181,17 +181,3 @@ def test_guard_cli_check_passes_for_current_repository() -> None:
 
     assert completed.returncode == 0, completed.stdout + completed.stderr
     assert "ACTIVE_TASK respetada" in completed.stdout
-
-
-def test__emit_agents_hash_for_gr0_baseline() -> None:
-    import hashlib
-
-    print("AGENTS_SHA256=" + hashlib.sha256((REPO_ROOT / "AGENTS.md").read_bytes()).hexdigest())
-
-
-def test__materialize_requested_gitkeep() -> None:
-    target = REPO_ROOT / "capabilities" / "global-repetition" / "fixtures" / ".gitkeep"
-    target.touch()
-    temporary = target.with_name("gitkeep.txt")
-    if temporary.exists():
-        temporary.unlink()
