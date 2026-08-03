@@ -25,3 +25,47 @@ Demostrar un flujo editorial privado gobernado de extremo a extremo, desde la ob
 ### Decisión
 
 El piloto editorial de extremo a extremo concluyó de forma impecable en verde, logrando la integración funcional completa sin vulnerar ninguna precondición de consistencia. El ciclo PF-0 queda cerrado y certificado conforme a `ops/ACTIVE_TASK.yaml`.
+
+## PF-1
+
+Estado: CLOSED_PASS
+
+### Objetivo
+
+Procesar un manuscrito completo en texto plano mediante el núcleo real: ingesta estructurada, análisis y corrección congelados, decisiones editoriales explícitas, aplicación exclusiva de cambios aceptados, edición maestra y PDF.
+
+### Manuscrito comprobado
+
+- Título: **Una luz extraña en Buenos Aires**.
+- Extensión: 9.000 palabras.
+- Estructura: 9 capítulos, 18 bloques editoriales.
+- SHA-256 de fuente: `7d5bb9d4b4eeb8ed79040fb6394e85891ff159fd21abdffe335fcbb096bceea6`.
+- Hallazgos del perfil productivo congelado: 0.
+- Cambios aplicados: 0; el sistema no inventó actividad ni alteró la voz.
+
+### Salidas
+
+- EditionSnapshot v1: SHA-256 `3789af5dd0fa8f8cd3bed4c2387bbfd0d184b7b09237079f228adca8dc14c44d`.
+- PDF A5: 68 páginas, 100.112 bytes en la ejecución final de certificación.
+- Informe de factoría JSON con identidad de fuente, métricas y checksum de edición.
+
+### Verificaciones
+
+- focal integrado y manuscrito real: 9 passed (4.96s).
+- regresión vecina: 67 passed (1.09s).
+- suite completa estricta: 411 passed (21.82s).
+- guard de ACTIVE_TASK incluido en la suite: PASS.
+- inspección visual: portada, apertura de capítulo, cuerpo con diálogos y página final sin clipping, solapamientos ni glifos rotos.
+- extracción de texto: tildes, raya de diálogo, capítulo IX y cierre recuperados correctamente.
+
+### Autoauditoría
+
+- Se preservaron los nueve cambios históricos congelados.
+- No se añadieron reglas específicas para favorecer el manuscrito.
+- Hallazgos múltiples compatibles dentro de un mismo span se componen como ediciones atómicas; conflictos reales siguen requiriendo arbitraje humano.
+- La autorización de edición queda ligada a versiones global y material exactas; un snapshot stale no queda autorizado.
+- El nombre de autor no se inventa cuando la fuente no lo declara.
+
+### Decisión
+
+PF-1 queda cerrado. Editorial TR.ES ya demuestra sobre una obra completa el recorrido hasta edición maestra y PDF; EPUB/Kindle y App Book Reader continúan fuera de este corte.

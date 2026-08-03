@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Mapping
-from typing import Any, TYPE_CHECKING
+from datetime import datetime, timezone
+from typing import Any, Literal, TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
 from editorial_tres.domain.graphs.expression import ALLOWED_BLOCK_TYPES
+from editorial_tres.domain.identifiers import ActorId, EditorialId, TenantId, WorkId
 from editorial_tres.domain.immutable_values import canonical_json, deep_freeze, deep_to_jsonable
 
 if TYPE_CHECKING:
@@ -154,4 +156,92 @@ class EditionSnapshot(BaseModel):
             or self.editorial_id != work.editorial_id.value
             or self.work_id != work.work_id.value
             or self.source_manuscript_version != work.manuscript_version
+        )
+
+
+EditionApprovalStatus = Literal["pending", "approved", "rejected"]
+
+
+class EditionApproval(BaseModel):
+    """Explicit authorization for publishing one exact material Work snapshot."""
+
+    approval_id: str
+    tenant_id: TenantId
+    editorial_id: EditorialId
+    work_id: WorkId
+    branch: str = "main"
+    source_work_version: int = Field(ge=1)
+    source_manuscript_version: int = Field(ge=1)
+    status: EditionApprovalStatus = "pending"
+    decided_by: ActorId | None = None
+    reason: str | None = None
+    decided_at: datetime | None = None
+
+    model_config = {"frozen": True}
+
+    @field_validator("approval_id", "branch")
+    @classmethod
+    def _required_approval_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("La aprobación de edición requiere identidad y rama.")
+        return normalized
+
+    @model_validator(mode="after")
+    def _consistent_decision(self) -> "EditionApproval":
+        if self.status == "pending":
+            if self.decided_by is not None or self.decided_at is not None:
+                raise ValueError("Una aprobación pendiente no puede registrar decisión.")
+        elif self.decided_by is None or self.decided_at is None:
+            raise ValueError("Una aprobación resuelta requiere actor y fecha.")
+        return self
+
+    @classmethod
+    def for_work(
+        cls,
+        work: "Work",
+        *,
+        approval_id: str,
+        branch: str = "main",
+    ) -> "EditionApproval":
+        return cls(
+            approval_id=approval_id,
+            tenant_id=work.tenant_id,
+            editorial_id=work.editorial_id,
+            work_id=work.work_id,
+            branch=branch,
+            source_work_version=work.version,
+            source_manuscript_version=work.manuscript_version,
+        )
+
+    def approve(
+        self,
+        *,
+        actor_id: ActorId,
+        reason: str,
+        decided_at: datetime | None = None,
+    ) -> "EditionApproval":
+        if self.status != "pending":
+            raise ValueError("Una aprobación de edición ya resuelta no puede decidirse otra vez.")
+        normalized_reason = reason.strip()
+        if not normalized_reason:
+            raise ValueError("La aprobación de edición debe conservar su fundamento.")
+        return self.model_copy(
+            update={
+                "status": "approved",
+                "decided_by": actor_id,
+                "reason": normalized_reason,
+                "decided_at": decided_at or datetime.now(timezone.utc),
+            }
+        )
+
+    def authorizes(self, work: "Work", *, branch: str = "main") -> bool:
+        return (
+            self.status == "approved"
+            and self.tenant_id == work.tenant_id
+            and self.editorial_id == work.editorial_id
+            and self.work_id == work.work_id
+            and self.branch == branch
+            and self.source_work_version == work.version
+            and self.source_manuscript_version == work.manuscript_version
         )

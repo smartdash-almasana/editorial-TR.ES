@@ -1,80 +1,89 @@
 schema_version: 1
-task_id: LAB-PC-2
+task_id: PF-1
 status: active
 mode: implementation
-capability: editorial.textual-analysis
-cycle_file: capabilities/textual-analysis/cycles/LAB-PC-2.yaml
-objective: evaluate_frozen_spanish_corrector_on_new_complete_held_out_texts_v1
+capability: editorial.private-factory
+cycle_file: capabilities/private-factory-pilot/cycles/PF-1.yaml
+objective: process_complete_plain_text_manuscript_to_reviewed_master_edition_and_pdf_v1
 
 allowed_paths:
-  - capabilities/textual-analysis/cycles/LAB-PC-2.yaml
-  - capabilities/textual-analysis/labs/LAB-PC-2.md
   - ops/ACTIVE_TASK.yaml
-  - platform/tests/lab_pc_2_spanish_correction_blind_texts.py
-  - platform/tests/fixtures/lab_pc_2/**
+  - capabilities/private-factory-pilot/cycles/PF-1.yaml
+  - capabilities/private-factory-pilot/EVIDENCE.md
+  - platform/pyproject.toml
+  - platform/src/editorial_tres/domain/editorial_passes.py
+  - platform/src/editorial_tres/domain/edition.py
+  - platform/src/editorial_tres/application/edition_projector.py
+  - platform/src/editorial_tres/application/private_factory.py
+  - platform/src/editorial_tres/infrastructure/pdf_edition_renderer.py
+  - platform/src/editorial_tres/private_factory_cli.py
+  - platform/tests/application/test_private_factory.py
+  - platform/tests/infrastructure/test_pdf_edition_renderer.py
+  - platform/tests/pilots/test_una_luz_extrana_private_factory.py
+  - projects/una-luz-extrana-en-buenos-aires/**
+  - exports/una-luz-extrana-en-buenos-aires/**
 
 forbidden_paths:
   - AGENTS.md
   - tools/**
-  - capabilities/textual-analysis/EVIDENCE.md
-  - capabilities/textual-analysis/cycles/PT-0.yaml
-  - capabilities/textual-analysis/cycles/PC-0.yaml
-  - capabilities/textual-analysis/cycles/PC-1.yaml
-  - capabilities/textual-analysis/cycles/PC-2.yaml
-  - capabilities/textual-analysis/cycles/PC-3.yaml
-  - capabilities/textual-analysis/cycles/PC-4.yaml
-  - capabilities/textual-analysis/cycles/PC-5.yaml
-  - capabilities/textual-analysis/cycles/LAB-PC-1.yaml
-  - capabilities/textual-analysis/labs/LAB-PC-1.md
+  - capabilities/textual-analysis/**
   - capabilities/global-repetition/**
   - capabilities/edition-slice/**
-  - capabilities/private-factory-pilot/**
   - docs/**
-  - platform/src/**
-  - platform/tests/domain/**
-  - platform/tests/fixtures/el_puerto_y_el_rio_con_errores.md
-  - platform/tests/fixtures/el_puerto_y_el_rio_gold.json
-  - platform/tests/lab_experiment_001_casa_del_rio.py
-  - platform/tests/lab_pc_1_spanish_correction_real_text.py
-  - platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
-  - platform/tests/lab_real_text_002_el_perro_mas_listo.py
-  - platform/tests/lab_real_text_003_corazon_piedra_verde.py
-  - platform/tests/pilots/**
   - plugins/**
-  - projects/**
   - constitution/**
   - .github/**
-  - platform/pyproject.toml
 
-allowed_new_dependencies: []
+allowed_new_dependencies:
+  - reportlab>=4.0.0
+dependency_file_changes_authorized: true
 allowed_providers: []
 
 tests:
-  - name: blind-complete-text-evaluation
+  - name: private-factory-real-manuscript
     cwd: platform
     command:
       - python
       - -m
       - pytest
-      - tests/lab_pc_2_spanish_correction_blind_texts.py
+      - tests/pilots/test_una_luz_extrana_private_factory.py
       - -q
-      - -s
-  - name: spanish-correction-neighbor-regression
+  - name: private-factory-focal
     cwd: platform
     command:
       - python
       - -m
       - pytest
+      - tests/application/test_private_factory.py
+      - tests/infrastructure/test_pdf_edition_renderer.py
+      - -q
+  - name: private-factory-neighbor-regression
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - tests/pilots/test_private_editorial_factory_v1.py
+      - tests/application/test_edition_projector.py
+      - tests/domain/test_editorial_passes.py
       - tests/domain/test_spanish_orthotypographic_corrector.py
       - tests/domain/test_spanish_grammar_corrector.py
-      - tests/domain/test_spanish_gold_corpus.py
+      - -q
+  - name: platform-suite-strict
+    cwd: platform
+    command:
+      - python
+      - -W
+      - error
+      - -m
+      - pytest
       - -q
 
 commit_authorized: true
 push_authorized: true
 
 baseline:
-  head: 3adea17be6773c04e6de8ff798aaba144b9fca60
+  head: ed00897b9149a8855f8b0545913fa49a9bb4a397
   preexisting_changes:
     - path: AGENTS.md
       status: '??'

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from editorial_tres.domain.edition import EditionBlock, EditionSnapshot
+from editorial_tres.domain.edition import EditionApproval, EditionBlock, EditionSnapshot
 from editorial_tres.domain.graphs.expression import ContentBlock
 from editorial_tres.domain.work import Work
 
@@ -20,18 +20,24 @@ class EditionProjector:
         edition_id: str | None = None,
         edition_version: int = 1,
         public_metadata: Mapping[str, Any] | None = None,
+        approval: EditionApproval | None = None,
     ) -> EditionSnapshot:
-        if work.status not in {"approved", "published"}:
+        work_is_approved = work.status in {"approved", "published"}
+        approval_is_exact = approval is not None and approval.authorizes(work)
+        if not work_is_approved and not approval_is_exact:
             raise ValueError(
-                "Sólo una Work aprobada o publicada puede proyectarse como edición."
+                "Sólo una Work aprobada/publicada o un snapshot autorizado exactamente "
+                "puede proyectarse como edición."
             )
 
         approved = {
             block.id: block
             for block in work.expression_graph.blocks.values()
-            if block.status == "approved"
+            if approval_is_exact or block.status == "approved"
         }
         if not approved:
+            if approval_is_exact:
+                raise ValueError("La Work no contiene bloques publicables autorizados.")
             raise ValueError("La Work no contiene bloques aprobados publicables.")
 
         for block in approved.values():

@@ -1,0 +1,71 @@
+schema_version: editorial.tres/cycle-v1
+id: PF-1
+capability: editorial.private-factory-pilot
+objective: process_complete_plain_text_manuscript_to_reviewed_master_edition_and_pdf_v1
+status: CLOSED_PASS
+
+allowed_paths:
+  - capabilities/private-factory-pilot/**
+  - ops/ACTIVE_TASK.yaml
+  - platform/pyproject.toml
+  - platform/src/editorial_tres/domain/edition.py
+  - platform/src/editorial_tres/domain/editorial_passes.py
+  - platform/src/editorial_tres/application/edition_projector.py
+  - platform/src/editorial_tres/application/private_factory.py
+  - platform/src/editorial_tres/infrastructure/pdf_edition_renderer.py
+  - platform/src/editorial_tres/private_factory_cli.py
+  - platform/tests/application/test_private_factory.py
+  - platform/tests/infrastructure/test_pdf_edition_renderer.py
+  - platform/tests/pilots/test_una_luz_extrana_private_factory.py
+  - projects/una-luz-extrana-en-buenos-aires/**
+  - exports/una-luz-extrana-en-buenos-aires/**
+
+forbidden_paths:
+  - AGENTS.md
+  - tools/**
+  - capabilities/textual-analysis/**
+  - capabilities/global-repetition/**
+  - capabilities/edition-slice/**
+  - docs/**
+  - plugins/**
+  - constitution/**
+  - .github/**
+
+change_budget:
+  max_production_files: 7
+  max_new_dependencies: 1
+  domain_schema_changes: true
+  event_schema_changes: false
+
+dependencies:
+  - reportlab>=4.0.0
+providers: []
+
+verification:
+  - name: private-factory-real-manuscript
+    result: 1 passed
+  - name: private-factory-focal
+    result: 9 passed
+  - name: private-factory-neighbor-regression
+    result: 67 passed
+  - name: platform-suite-strict
+    result: 411 passed
+  - name: pdf-visual-inspection
+    result: PASS — cover, chapter opening, body/dialogue and final page
+
+permissions:
+  commit: true
+  push: true
+
+deliverables:
+  - complete 9000-word manuscript ingested as nine ordered chapters
+  - frozen Spanish correction profile executed without manuscript-specific rules
+  - explicit decision gate and atomic composition for compatible accepted corrections
+  - exact snapshot publication approval and neutral master edition
+  - deterministic 68-page A5 PDF with visual inspection
+  - source, edition master and factory report retained with SHA-256 provenance
+
+completion:
+  requires_all_verification: true
+  evidence_update: completed
+  advance_next_cycle: false
