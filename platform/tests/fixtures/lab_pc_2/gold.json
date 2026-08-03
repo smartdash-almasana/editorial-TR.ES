@@ -1,0 +1,764 @@
+{
+  "schema_version": "editorial.tres/blind-spanish-corpus-v1",
+  "laboratory_id": "LAB-PC-2",
+  "language": "es-AR",
+  "frozen_before_first_execution": true,
+  "frozen_product_head": "3adea17be6773c04e6de8ff798aaba144b9fca60",
+  "corpus_kind": "new_complete_held_out_original_texts",
+  "annotation_scope": "complete normative Spanish correction plus explicit valid voice controls",
+  "product_profiles": [
+    {
+      "profile_id": "builtin_default",
+      "description": "Clases productivas instanciadas sin configuración externa.",
+      "correctors": [
+        "SpanishOrthotypographicCorrector()",
+        "SpanishGrammarCorrector()"
+      ]
+    },
+    {
+      "profile_id": "pc3_configured_profile",
+      "description": "Mismas clases más la configuración versionada ya usada por PC-3/PC-4; el texto controlado anterior no se evalúa ni se copia.",
+      "configuration_source": "tests/fixtures/el_puerto_y_el_rio_gold.json"
+    }
+  ],
+  "sources": [
+    {
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "title": "La última luz del taller",
+      "fixture_path": "tests/fixtures/lab_pc_2/texts/01_la_ultima_luz_del_taller.txt",
+      "encoding": "utf-8",
+      "fixture_sha256": "c4f722f6fc1d22c790fd4e2fe9a0df2ef7ff876c430465ba3d0f5ff86d30f5fa",
+      "body_sha256": "40f7fb6a54485a0e07d40c268f49e67bc1bf13c369640f1859a50e2b143640de",
+      "block_id": "body",
+      "body_length": 1543,
+      "provenance": {
+        "kind": "original_held_out_fixture",
+        "author": "Editorial TR.ES LAB-PC-2",
+        "created_for": "blind evaluation before first corrector execution",
+        "reused_from_previous_corpus": false
+      }
+    },
+    {
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "title": "La biblioteca de barrio",
+      "fixture_path": "tests/fixtures/lab_pc_2/texts/02_la_biblioteca_de_barrio.txt",
+      "encoding": "utf-8",
+      "fixture_sha256": "f451037ed1890ffcff575fe91a96a1cbc0c23ba54889acee5d4832f645a8950d",
+      "body_sha256": "6d9c265e8e3b8add473083482dceae75bbe5ca1ca142ff29221ebac65de85f86",
+      "block_id": "body",
+      "body_length": 1772,
+      "provenance": {
+        "kind": "original_held_out_fixture",
+        "author": "Editorial TR.ES LAB-PC-2",
+        "created_for": "blind evaluation before first corrector execution",
+        "reused_from_previous_corpus": false
+      }
+    },
+    {
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "title": "El pan compartido",
+      "fixture_path": "tests/fixtures/lab_pc_2/texts/03_el_pan_compartido.txt",
+      "encoding": "utf-8",
+      "fixture_sha256": "3216c730a05215a2e263bf7e4a1b8cd72fb8857a51e3ce6bcdc78b01c5f55b2a",
+      "body_sha256": "00e59ce35937d3593a6bdf7db4f5b404df1699cf140d7cf1d80278bab9363fae",
+      "block_id": "body",
+      "body_length": 1526,
+      "provenance": {
+        "kind": "original_held_out_fixture",
+        "author": "Editorial TR.ES LAB-PC-2",
+        "created_for": "blind evaluation before first corrector execution",
+        "reused_from_previous_corpus": false
+      }
+    }
+  ],
+  "adjudication": {
+    "status": "complete_before_first_execution",
+    "expected_error_count": 37,
+    "governed_by_builtin_default_count": 29,
+    "governed_by_pc3_configured_profile_count": 30,
+    "uncovered_count": 7,
+    "clean_and_voice_control_count": 7,
+    "dangerous_correction_definition": "Any emitted finding without an exact governed gold match, especially one changing a declared valid control."
+  },
+  "errors": [
+    {
+      "case_id": "LAB2-E001",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "orthotypography.repeated_horizontal_whitespace",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.horizontal-whitespace",
+      "expected_classification": "verified_error",
+      "start": 0,
+      "end": 81,
+      "source_fragment": "Cuando cerró la persiana, Julián dejó encendida  la lámpara del banco de trabajo.",
+      "replacement_fragment": "Cuando cerró la persiana, Julián dejó encendida la lámpara del banco de trabajo."
+    },
+    {
+      "case_id": "LAB2-E002",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 82,
+      "end": 161,
+      "source_fragment": "No era olvido:desde la vereda, el rectángulo amarillo parecía cuidar el taller.",
+      "replacement_fragment": "No era olvido: desde la vereda, el rectángulo amarillo parecía cuidar el taller."
+    },
+    {
+      "case_id": "LAB2-E003",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "grammar.impersonal_haber_quienes_number",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.impersonal-haber-quienes-number",
+      "expected_classification": "verified_error",
+      "start": 162,
+      "end": 299,
+      "source_fragment": "Habían quienes decían que aquel resplandor atraía a los ladrones, pero él prefería pensar que acompañaba a los vecinos que volvían tarde.",
+      "replacement_fragment": "Había quienes decían que aquel resplandor atraía a los ladrones, pero él prefería pensar que acompañaba a los vecinos que volvían tarde."
+    },
+    {
+      "case_id": "LAB2-E004",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "orthotypography.space_before_closing_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.space-before-closing-punctuation",
+      "expected_classification": "verified_error",
+      "start": 451,
+      "end": 531,
+      "source_fragment": "Ella apoyó la caja ,sacó una llave oxidada y explicó que pertenecía a su abuelo.",
+      "replacement_fragment": "Ella apoyó la caja,sacó una llave oxidada y explicó que pertenecía a su abuelo."
+    },
+    {
+      "case_id": "LAB2-E005",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 451,
+      "end": 531,
+      "source_fragment": "Ella apoyó la caja ,sacó una llave oxidada y explicó que pertenecía a su abuelo.",
+      "replacement_fragment": "Ella apoyó la caja , sacó una llave oxidada y explicó que pertenecía a su abuelo."
+    },
+    {
+      "case_id": "LAB2-E006",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "grammar.a_pesar_que_government",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.a-pesar-de-que-government",
+      "expected_classification": "verified_error",
+      "start": 532,
+      "end": 611,
+      "source_fragment": "A pesar que habían pasado treinta años, quería abrirla sin romper la cerradura.",
+      "replacement_fragment": "A pesar de que habían pasado treinta años, quería abrirla sin romper la cerradura."
+    },
+    {
+      "case_id": "LAB2-E007",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "grammar.incompatible_object_clitics",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.indirect-before-direct-object-clitic",
+      "expected_classification": "verified_error",
+      "start": 687,
+      "end": 782,
+      "source_fragment": "Malena le lo había repetido a su hermano muchas veces: el hombre era raro, pero sabía trabajar.",
+      "replacement_fragment": "Malena se lo había repetido a su hermano muchas veces: el hombre era raro, pero sabía trabajar."
+    },
+    {
+      "case_id": "LAB2-E008",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "grammar.impersonal_haber_number",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.impersonal-haber-number",
+      "expected_classification": "probable_issue",
+      "start": 783,
+      "end": 876,
+      "source_fragment": "Afuera hubieron tres golpes secos contra la persiana; sólo era una rama movida por el viento.",
+      "replacement_fragment": "Afuera hubo tres golpes secos contra la persiana; sólo era una rama movida por el viento."
+    },
+    {
+      "case_id": "LAB2-E009",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "grammar.dequeism",
+      "adjudication": "verified_error",
+      "support_status": "uncovered",
+      "expected_profiles": [],
+      "expected_criterion_id": null,
+      "expected_classification": null,
+      "start": 1088,
+      "end": 1102,
+      "source_fragment": "Pensaba de que",
+      "replacement_fragment": "Pensaba que"
+    },
+    {
+      "case_id": "LAB2-E010",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1258,
+      "end": 1296,
+      "source_fragment": "Malena respiró hondo,pero no lo abrió.",
+      "replacement_fragment": "Malena respiró hondo, pero no lo abrió."
+    },
+    {
+      "case_id": "LAB2-E011",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "category": "orthotypography.space_before_closing_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.space-before-closing-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1313,
+      "end": 1349,
+      "source_fragment": "Algunas cosas necesitan luz de día .",
+      "replacement_fragment": "Algunas cosas necesitan luz de día."
+    },
+    {
+      "case_id": "LAB2-E012",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 135,
+      "end": 232,
+      "source_fragment": "En sus estantes,un lector encuentra preguntas viejas y respuestas que todavía pueden incomodarlo.",
+      "replacement_fragment": "En sus estantes, un lector encuentra preguntas viejas y respuestas que todavía pueden incomodarlo."
+    },
+    {
+      "case_id": "LAB2-E013",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthography.accent",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "oro.pc3.lexical.kilometros",
+      "expected_classification": "verified_error",
+      "start": 351,
+      "end": 361,
+      "source_fragment": "kilometros",
+      "replacement_fragment": "kilómetros"
+    },
+    {
+      "case_id": "LAB2-E014",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthography.contextual_accent",
+      "adjudication": "verified_error",
+      "support_status": "uncovered",
+      "expected_profiles": [],
+      "expected_criterion_id": null,
+      "expected_classification": null,
+      "start": 388,
+      "end": 393,
+      "source_fragment": "tenia",
+      "replacement_fragment": "tenía"
+    },
+    {
+      "case_id": "LAB2-E015",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 376,
+      "end": 444,
+      "source_fragment": "El proyecto tenia una regla sencilla:la puerta permanecería abierta.",
+      "replacement_fragment": "El proyecto tenia una regla sencilla: la puerta permanecería abierta."
+    },
+    {
+      "case_id": "LAB2-E016",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "grammar.impersonal_haber_number",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.impersonal-haber-number",
+      "expected_classification": "probable_issue",
+      "start": 445,
+      "end": 517,
+      "source_fragment": "Habrán muchas razones para explicar su éxito, pero la principal fue esa.",
+      "replacement_fragment": "Habrá muchas razones para explicar su éxito, pero la principal fue esa."
+    },
+    {
+      "case_id": "LAB2-E017",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "grammar.a_pesar_que_government",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.a-pesar-de-que-government",
+      "expected_classification": "verified_error",
+      "start": 518,
+      "end": 615,
+      "source_fragment": "A pesar que el presupuesto era escaso, nadie pidió credenciales ni justificó por qué quería leer.",
+      "replacement_fragment": "A pesar de que el presupuesto era escaso, nadie pidió credenciales ni justificó por qué quería leer."
+    },
+    {
+      "case_id": "LAB2-E018",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "grammar.subject_verb_number_agreement",
+      "adjudication": "verified_error",
+      "support_status": "uncovered",
+      "expected_profiles": [],
+      "expected_criterion_id": null,
+      "expected_classification": null,
+      "start": 617,
+      "end": 635,
+      "source_fragment": "Los talleres reúne",
+      "replacement_fragment": "Los talleres reúnen"
+    },
+    {
+      "case_id": "LAB2-E019",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthotypography.angle_quote_inner_whitespace",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.angle-quote-inner-whitespace",
+      "expected_classification": "verified_error",
+      "start": 617,
+      "end": 931,
+      "source_fragment": "Los talleres reúne a chicos, jubilados y trabajadores que llegan al final del día. Algunos buscan información; otros necesitan silencio. Una mujer dijo que iba « a perder el tiempo » y terminó coordinando un círculo de lectura. Dos estudiantes dejaron  sus teléfonos en una caja para concentrarse durante una hora.",
+      "replacement_fragment": "Los talleres reúne a chicos, jubilados y trabajadores que llegan al final del día. Algunos buscan información; otros necesitan silencio. Una mujer dijo que iba «a perder el tiempo» y terminó coordinando un círculo de lectura. Dos estudiantes dejaron  sus teléfonos en una caja para concentrarse durante una hora."
+    },
+    {
+      "case_id": "LAB2-E020",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthotypography.repeated_horizontal_whitespace",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.horizontal-whitespace",
+      "expected_classification": "verified_error",
+      "start": 845,
+      "end": 931,
+      "source_fragment": "Dos estudiantes dejaron  sus teléfonos en una caja para concentrarse durante una hora.",
+      "replacement_fragment": "Dos estudiantes dejaron sus teléfonos en una caja para concentrarse durante una hora."
+    },
+    {
+      "case_id": "LAB2-E021",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1291,
+      "end": 1380,
+      "source_fragment": "Los voluntarios revisaron las páginas y descubrieron recetas,cuentas domésticas y poemas.",
+      "replacement_fragment": "Los voluntarios revisaron las páginas y descubrieron recetas, cuentas domésticas y poemas."
+    },
+    {
+      "case_id": "LAB2-E022",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthography.lexical",
+      "adjudication": "verified_error",
+      "support_status": "uncovered",
+      "expected_profiles": [],
+      "expected_criterion_id": null,
+      "expected_classification": null,
+      "start": 1479,
+      "end": 1489,
+      "source_fragment": "conclución",
+      "replacement_fragment": "conclusión"
+    },
+    {
+      "case_id": "LAB2-E023",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthotypography.space_before_closing_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.space-before-closing-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1582,
+      "end": 1684,
+      "source_fragment": "La gente volvía porque alguien recordaba su nombre y porque los libros podían llevarse sin ceremonia .",
+      "replacement_fragment": "La gente volvía porque alguien recordaba su nombre y porque los libros podían llevarse sin ceremonia."
+    },
+    {
+      "case_id": "LAB2-E024",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1685,
+      "end": 1772,
+      "source_fragment": "Una biblioteca de barrio no salva a una comunidad;le ofrece un lugar donde reconocerse.",
+      "replacement_fragment": "Una biblioteca de barrio no salva a una comunidad; le ofrece un lugar donde reconocerse."
+    },
+    {
+      "case_id": "LAB2-E025",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthotypography.angle_quote_inner_whitespace",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.angle-quote-inner-whitespace",
+      "expected_classification": "verified_error",
+      "start": 0,
+      "end": 186,
+      "source_fragment": "La reunión empezó sin música. Clara puso una hogaza sobre la mesa y leyó en voz baja: « Yo soy el pan de vida ». Nadie intentó convertir la frase en consigna; primero guardaron silencio.",
+      "replacement_fragment": "La reunión empezó sin música. Clara puso una hogaza sobre la mesa y leyó en voz baja: «Yo soy el pan de vida». Nadie intentó convertir la frase en consigna; primero guardaron silencio."
+    },
+    {
+      "case_id": "LAB2-E026",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "grammar.impersonal_haber_quienes_number",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.impersonal-haber-quienes-number",
+      "expected_classification": "verified_error",
+      "start": 188,
+      "end": 286,
+      "source_fragment": "Habían quienes llegaban cansados y quienes traían preguntas que no cabían en una respuesta rápida.",
+      "replacement_fragment": "Había quienes llegaban cansados y quienes traían preguntas que no cabían en una respuesta rápida."
+    },
+    {
+      "case_id": "LAB2-E027",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "grammar.a_pesar_que_government",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.a-pesar-de-que-government",
+      "expected_classification": "verified_error",
+      "start": 331,
+      "end": 428,
+      "source_fragment": "A pesar que todos conocían la noticia, nadie le ofreció una explicación sobre los planes de Dios.",
+      "replacement_fragment": "A pesar de que todos conocían la noticia, nadie le ofreció una explicación sobre los planes de Dios."
+    },
+    {
+      "case_id": "LAB2-E028",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "grammar.incompatible_object_clitics",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.grammar.indirect-before-direct-object-clitic",
+      "expected_classification": "verified_error",
+      "start": 429,
+      "end": 487,
+      "source_fragment": "Marta se sentó a su lado y le la alcanzó una taza de café.",
+      "replacement_fragment": "Marta se sentó a su lado y se la alcanzó una taza de café."
+    },
+    {
+      "case_id": "LAB2-E029",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthography.contextual_accent",
+      "adjudication": "verified_error",
+      "support_status": "uncovered",
+      "expected_profiles": [],
+      "expected_criterion_id": null,
+      "expected_classification": null,
+      "start": 490,
+      "end": 530,
+      "source_fragment": "No sé donde voy a estar el mes que viene",
+      "replacement_fragment": "No sé dónde voy a estar el mes que viene"
+    },
+    {
+      "case_id": "LAB2-E030",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 824,
+      "end": 884,
+      "source_fragment": "Después,una joven leyó el relato de los discípulos de Emaús.",
+      "replacement_fragment": "Después, una joven leyó el relato de los discípulos de Emaús."
+    },
+    {
+      "case_id": "LAB2-E031",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "grammar.verbal_form",
+      "adjudication": "verified_error",
+      "support_status": "uncovered",
+      "expected_profiles": [],
+      "expected_criterion_id": null,
+      "expected_classification": null,
+      "start": 1009,
+      "end": 1017,
+      "source_fragment": "Dijistes",
+      "replacement_fragment": "Dijiste"
+    },
+    {
+      "case_id": "LAB2-E032",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthography.word_segmentation",
+      "adjudication": "verified_error",
+      "support_status": "uncovered",
+      "expected_profiles": [],
+      "expected_criterion_id": null,
+      "expected_classification": null,
+      "start": 1092,
+      "end": 1099,
+      "source_fragment": "Aun que",
+      "replacement_fragment": "Aunque"
+    },
+    {
+      "case_id": "LAB2-E033",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthotypography.repeated_horizontal_whitespace",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.horizontal-whitespace",
+      "expected_classification": "verified_error",
+      "start": 1203,
+      "end": 1270,
+      "source_fragment": "Clara dejó  la última porción en un plato para la vecina del fondo.",
+      "replacement_fragment": "Clara dejó la última porción en un plato para la vecina del fondo."
+    },
+    {
+      "case_id": "LAB2-E034",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthotypography.space_before_closing_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.space-before-closing-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1271,
+      "end": 1346,
+      "source_fragment": "Samuel miró la mesa vacía ,respiró y pidió ayuda para ordenar unas cuentas.",
+      "replacement_fragment": "Samuel miró la mesa vacía,respiró y pidió ayuda para ordenar unas cuentas."
+    },
+    {
+      "case_id": "LAB2-E035",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1271,
+      "end": 1346,
+      "source_fragment": "Samuel miró la mesa vacía ,respiró y pidió ayuda para ordenar unas cuentas.",
+      "replacement_fragment": "Samuel miró la mesa vacía , respiró y pidió ayuda para ordenar unas cuentas."
+    },
+    {
+      "case_id": "LAB2-E036",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1370,
+      "end": 1473,
+      "source_fragment": "Hubo presencia, oración y una tarea concreta para el día siguiente:acompañar a Samuel a una entrevista.",
+      "replacement_fragment": "Hubo presencia, oración y una tarea concreta para el día siguiente: acompañar a Samuel a una entrevista."
+    },
+    {
+      "case_id": "LAB2-E037",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "category": "orthotypography.missing_space_after_medial_punctuation",
+      "adjudication": "verified_error",
+      "support_status": "governed",
+      "expected_profiles": [
+        "builtin_default",
+        "pc3_configured_profile"
+      ],
+      "expected_criterion_id": "es.orthotypography.missing-space-after-medial-punctuation",
+      "expected_classification": "verified_error",
+      "start": 1474,
+      "end": 1526,
+      "source_fragment": "La puerta se cerró despacio;afuera seguía lloviendo.",
+      "replacement_fragment": "La puerta se cerró despacio; afuera seguía lloviendo."
+    }
+  ],
+  "controls": [
+    {
+      "control_id": "LAB2-C001",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "type": "orthography_valid",
+      "start": 414,
+      "end": 450,
+      "source_fragment": "Julián se rio y le señaló una silla.",
+      "reason": "«rio» es la grafía normativa sin tilde del pretérito de «reír» bajo la ortografía vigente."
+    },
+    {
+      "control_id": "LAB2-C002",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "type": "literary_voice",
+      "start": 976,
+      "end": 1052,
+      "source_fragment": "Decía «güeno» cuando estaba contento y estiraba el saludo: «¡Eeeh, m'hija!».",
+      "reason": "Oralidad rural y alargamiento expresivo deliberados."
+    },
+    {
+      "control_id": "LAB2-C003",
+      "corpus_id": "lab-pc-2.text-01.v1",
+      "type": "rioplatense_voice",
+      "start": 361,
+      "end": 413,
+      "source_fragment": "—Che, ¿todavía arreglás cosas imposibles? —preguntó.",
+      "reason": "Voseo y tratamiento rioplatense deliberados."
+    },
+    {
+      "control_id": "LAB2-C004",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "type": "grammar_valid",
+      "start": 1172,
+      "end": 1265,
+      "source_fragment": "Habían terminado de ordenar las donaciones cuando apareció una bolsa con cuadernos escolares.",
+      "reason": "«Habían» es auxiliar plural con sujeto tácito, no haber impersonal."
+    },
+    {
+      "control_id": "LAB2-C005",
+      "corpus_id": "lab-pc-2.text-02.v1",
+      "type": "rioplatense_voice",
+      "start": 968,
+      "end": 1069,
+      "source_fragment": "Se puede discutir, tomar mate y decir «esto no me entra ni ahí» sin que la conversación pierda valor.",
+      "reason": "Expresión coloquial rioplatense deliberada."
+    },
+    {
+      "control_id": "LAB2-C006",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "type": "rioplatense_voice",
+      "start": 545,
+      "end": 624,
+      "source_fragment": "—Acá no tenés que hacerte el fuerte —respondió Marta—. Podemos caminar con vos.",
+      "reason": "Voseo rioplatense deliberado."
+    },
+    {
+      "control_id": "LAB2-C007",
+      "corpus_id": "lab-pc-2.text-03.v1",
+      "type": "literary_voice",
+      "start": 626,
+      "end": 713,
+      "source_fragment": "Un hombre mayor contó que, cuando era chico, su madre decía «ande» en lugar de «donde».",
+      "reason": "Variante oral citada y contextualizada, no error de la voz narrativa."
+    }
+  ],
+  "exclusions": [
+    "doctrinal accuracy",
+    "Christian genre alignment",
+    "general style improvement",
+    "automatic correction",
+    "product-wide Spanish accuracy claims"
+  ]
+}

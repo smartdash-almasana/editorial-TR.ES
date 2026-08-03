@@ -1,0 +1,182 @@
+schema_version: editorial.tres/cycle-v1
+id: LAB-PC-2
+capability: editorial.textual-analysis
+objective: evaluate_frozen_spanish_corrector_on_new_complete_held_out_texts_v1
+status: CLOSED_PASS
+
+allowed_paths:
+  - capabilities/textual-analysis/cycles/LAB-PC-2.yaml
+  - capabilities/textual-analysis/labs/LAB-PC-2.md
+  - ops/ACTIVE_TASK.yaml
+  - platform/tests/lab_pc_2_spanish_correction_blind_texts.py
+  - platform/tests/fixtures/lab_pc_2/**
+
+forbidden_paths:
+  - AGENTS.md
+  - tools/**
+  - capabilities/textual-analysis/EVIDENCE.md
+  - capabilities/textual-analysis/cycles/PT-0.yaml
+  - capabilities/textual-analysis/cycles/PC-0.yaml
+  - capabilities/textual-analysis/cycles/PC-1.yaml
+  - capabilities/textual-analysis/cycles/PC-2.yaml
+  - capabilities/textual-analysis/cycles/PC-3.yaml
+  - capabilities/textual-analysis/cycles/PC-4.yaml
+  - capabilities/textual-analysis/cycles/PC-5.yaml
+  - capabilities/textual-analysis/cycles/LAB-PC-1.yaml
+  - capabilities/textual-analysis/labs/LAB-PC-1.md
+  - capabilities/global-repetition/**
+  - capabilities/edition-slice/**
+  - capabilities/private-factory-pilot/**
+  - docs/**
+  - platform/src/**
+  - platform/tests/domain/**
+  - platform/tests/fixtures/el_puerto_y_el_rio_con_errores.md
+  - platform/tests/fixtures/el_puerto_y_el_rio_gold.json
+  - platform/tests/lab_experiment_001_casa_del_rio.py
+  - platform/tests/lab_pc_1_spanish_correction_real_text.py
+  - platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
+  - platform/tests/lab_real_text_002_el_perro_mas_listo.py
+  - platform/tests/lab_real_text_003_corazon_piedra_verde.py
+  - platform/tests/pilots/**
+  - plugins/**
+  - projects/**
+  - constitution/**
+  - .github/**
+  - platform/pyproject.toml
+
+change_budget:
+  max_production_files: 0
+  max_new_dependencies: 0
+  domain_schema_changes: false
+  event_schema_changes: false
+
+dependencies:
+  - TextAnalyzer
+  - TextAnalysisSnapshot
+  - SpanishOrthotypographicCorrector
+  - SpanishGrammarCorrector
+providers: []
+
+verification:
+  - name: blind-complete-text-evaluation
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - tests/lab_pc_2_spanish_correction_blind_texts.py
+      - -q
+      - -s
+  - name: spanish-correction-neighbor-regression
+    cwd: platform
+    command:
+      - python
+      - -m
+      - pytest
+      - tests/domain/test_spanish_orthotypographic_corrector.py
+      - tests/domain/test_spanish_grammar_corrector.py
+      - tests/domain/test_spanish_gold_corpus.py
+      - -q
+
+permissions:
+  commit: true
+  push: true
+
+evaluation_protocol:
+  frozen_product_head: 3adea17be6773c04e6de8ff798aaba144b9fca60
+  corpus_kind: new_complete_held_out_spanish_texts
+  minimum_text_count: 3
+  reuse_previous_lab_texts: false
+  reuse_controlled_corpus: false
+  freeze_texts_and_annotations_before_first_run: true
+  require_complete_gold_annotation: true
+  require_clean_controls: true
+  require_voice_preservation_review: true
+  require_exact_span_and_replacement_match: true
+  allow_product_code_changes: false
+  allow_rule_additions: false
+  allow_automatic_correction: false
+
+deliverables:
+  - at least three complete Spanish texts not used by PC-1 through PC-5 or LAB-PC-1
+  - explicit provenance and immutable hashes for every evaluated text
+  - complete human gold annotation frozen before the first corrector execution
+  - clean passages and deliberate literary voice retained as negative controls
+  - current integrated correctors executed without configuration or rule changes
+  - exact per-text inventory of true positives false positives omissions and ambiguous cases
+  - global precision recall and F1 plus separate recall for the declared governed rule catalog
+  - explicit count and examples of dangerous corrections that alter valid meaning voice or dialect
+  - immutable Work and source verification with no Patch and no automatic correction
+  - report that distinguishes measured sufficiency from product-wide claims
+  - evidence-backed decision to freeze the bounded corrector or open only gaps demonstrated by this corpus
+  - no product code no dependency no provider no LLM and no plugin
+
+corpus_freeze:
+  status: FROZEN_BEFORE_FIRST_EXECUTION
+  product_head: 3adea17be6773c04e6de8ff798aaba144b9fca60
+  text_count: 3
+  expected_error_count: 37
+  builtin_default_governed_count: 29
+  pc3_configured_profile_governed_count: 30
+  uncovered_count: 7
+  clean_and_voice_control_count: 7
+  fixture_hashes:
+    01_la_ultima_luz_del_taller.txt: c4f722f6fc1d22c790fd4e2fe9a0df2ef7ff876c430465ba3d0f5ff86d30f5fa
+    02_la_biblioteca_de_barrio.txt: f451037ed1890ffcff575fe91a96a1cbc0c23ba54889acee5d4832f645a8950d
+    03_el_pan_compartido.txt: 3216c730a05215a2e263bf7e4a1b8cd72fb8857a51e3ce6bcdc78b01c5f55b2a
+  first_execution_completed: true
+
+evaluation_results:
+  tests:
+    blind_complete_text_evaluation: 2_passed
+    spanish_correction_neighbor_regression: 51_passed
+    active_task_guard: PASS
+  builtin_default:
+    gold_errors: 37
+    findings: 29
+    true_positives: 29
+    false_positives: 0
+    duplicate_findings: 0
+    omissions: 8
+    precision: 1.0
+    recall: 0.7837837837837838
+    f1: 0.8787878787878788
+    governed_expected: 29
+    governed_detected: 29
+    governed_catalog_recall: 1.0
+    dangerous_control_corrections: 0
+  pc3_configured_profile:
+    gold_errors: 37
+    findings: 31
+    true_positives: 30
+    false_positives: 1
+    duplicate_findings: 0
+    omissions: 7
+    precision: 0.967741935483871
+    recall: 0.8108108108108109
+    f1: 0.8823529411764706
+    governed_expected: 30
+    governed_detected: 30
+    governed_catalog_recall: 1.0
+    dangerous_control_corrections: 1
+  decision:
+    selected_profile: builtin_default
+    product_role: prudent_editorial_assistant_with_human_review
+    automatic_correction_authorized: false
+    integrate_pc3_configured_profile: false
+    rationale: marginal_recall_gain_does_not_justify_dangerous_accent_change_on_valid_past_tense_rio
+    demonstrated_gap_categories:
+      - grammar.dequeism
+      - orthography.accent
+      - orthography.contextual_accent
+      - grammar.subject_verb_number_agreement
+      - orthography.lexical
+      - grammar.verbal_form
+      - orthography.word_segmentation
+
+completion:
+  requires_all_verification: true
+  requires_complete_gold_adjudication: true
+  requires_manual_voice_review: true
+  evidence_update: local_lab_report
+  advance_next_cycle: false

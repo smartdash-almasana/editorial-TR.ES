@@ -1,18 +1,17 @@
 schema_version: 1
-task_id: PC-5
+task_id: LAB-PC-2
 status: active
 mode: implementation
 capability: editorial.textual-analysis
-cycle_file: capabilities/textual-analysis/cycles/PC-5.yaml
-objective: build_governed_impersonal_haber_quienes_rule_v1
+cycle_file: capabilities/textual-analysis/cycles/LAB-PC-2.yaml
+objective: evaluate_frozen_spanish_corrector_on_new_complete_held_out_texts_v1
 
 allowed_paths:
-  - capabilities/textual-analysis/cycles/PC-5.yaml
+  - capabilities/textual-analysis/cycles/LAB-PC-2.yaml
+  - capabilities/textual-analysis/labs/LAB-PC-2.md
   - ops/ACTIVE_TASK.yaml
-  - platform/src/editorial_tres/domain/grammar.py
-  - platform/tests/domain/test_spanish_grammar_corrector.py
-  - platform/tests/domain/test_spanish_gold_corpus.py
-  - platform/tests/fixtures/el_puerto_y_el_rio_gold.json
+  - platform/tests/lab_pc_2_spanish_correction_blind_texts.py
+  - platform/tests/fixtures/lab_pc_2/**
 
 forbidden_paths:
   - AGENTS.md
@@ -24,23 +23,17 @@ forbidden_paths:
   - capabilities/textual-analysis/cycles/PC-2.yaml
   - capabilities/textual-analysis/cycles/PC-3.yaml
   - capabilities/textual-analysis/cycles/PC-4.yaml
+  - capabilities/textual-analysis/cycles/PC-5.yaml
   - capabilities/textual-analysis/cycles/LAB-PC-1.yaml
   - capabilities/textual-analysis/labs/LAB-PC-1.md
   - capabilities/global-repetition/**
   - capabilities/edition-slice/**
   - capabilities/private-factory-pilot/**
   - docs/**
-  - platform/src/editorial_tres/domain/proofreading.py
-  - platform/src/editorial_tres/domain/reviews.py
-  - platform/src/editorial_tres/domain/text_analysis.py
-  - platform/src/editorial_tres/domain/finding_decisions.py
-  - platform/src/editorial_tres/domain/editorial_passes.py
-  - platform/src/editorial_tres/domain/patches.py
-  - platform/src/editorial_tres/domain/work.py
-  - platform/src/editorial_tres/domain/graphs/**
-  - platform/src/editorial_tres/application/**
-  - platform/src/editorial_tres/infrastructure/**
+  - platform/src/**
+  - platform/tests/domain/**
   - platform/tests/fixtures/el_puerto_y_el_rio_con_errores.md
+  - platform/tests/fixtures/el_puerto_y_el_rio_gold.json
   - platform/tests/lab_experiment_001_casa_del_rio.py
   - platform/tests/lab_pc_1_spanish_correction_real_text.py
   - platform/tests/lab_real_text_001_el_hambre_de_los_muertos.py
@@ -57,37 +50,31 @@ allowed_new_dependencies: []
 allowed_providers: []
 
 tests:
-  - name: impersonal-haber-quienes-focal
+  - name: blind-complete-text-evaluation
     cwd: platform
     command:
       - python
       - -m
       - pytest
-      - tests/domain/test_spanish_grammar_corrector.py
-      - -q
-  - name: spanish-gold-corpus-regression
-    cwd: platform
-    command:
-      - python
-      - -m
-      - pytest
-      - tests/domain/test_spanish_gold_corpus.py
+      - tests/lab_pc_2_spanish_correction_blind_texts.py
       - -q
       - -s
-  - name: orthotypographic-neighbor-regression
+  - name: spanish-correction-neighbor-regression
     cwd: platform
     command:
       - python
       - -m
       - pytest
       - tests/domain/test_spanish_orthotypographic_corrector.py
+      - tests/domain/test_spanish_grammar_corrector.py
+      - tests/domain/test_spanish_gold_corpus.py
       - -q
 
 commit_authorized: true
 push_authorized: true
 
 baseline:
-  head: a9921fe36aa3ee8e43c80a9ee6672650037e71f8
+  head: 3adea17be6773c04e6de8ff798aaba144b9fca60
   preexisting_changes:
     - path: AGENTS.md
       status: '??'
