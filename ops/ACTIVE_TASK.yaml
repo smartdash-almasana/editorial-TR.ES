@@ -1,89 +1,51 @@
 schema_version: 1
-task_id: PF-1R
+task_id: PF-1R-CI1
 status: active
 mode: implementation
-capability: editorial.private-factory
-cycle_file: capabilities/private-factory-pilot/cycles/PF-1R.yaml
-objective: repair_and_unify_executable_private_editorial_factory
+capability: editorial.task-guard
+parent_task: PF-1R
+objective: version_and_reproduce_active_task_guard_in_clean_ci_checkout
 
 allowed_paths:
   - ops/ACTIVE_TASK.yaml
-  - capabilities/private-factory-pilot/cycles/PF-1.yaml
-  - capabilities/private-factory-pilot/cycles/PF-1R.yaml
-  - capabilities/private-factory-pilot/EVIDENCE.md
-  - docs/architecture/EDITORIAL_TRES_ENGINEERING_STATE.md
-  - .github/workflows/**
-  - platform/src/editorial_tres/private_factory_cli.py
-  - platform/src/editorial_tres/composition.py
-  - platform/src/editorial_tres/project_manifest.py
-  - platform/src/editorial_tres/application/private_factory.py
-  - platform/src/editorial_tres/application/app_book_compiler.py
-  - platform/src/editorial_tres/application/edition_projector.py
-  - platform/src/editorial_tres/domain/approvals.py
-  - platform/src/editorial_tres/domain/edition.py
-  - platform/src/editorial_tres/infrastructure/html_edition_renderer.py
-  - platform/src/editorial_tres/infrastructure/memory/event_store.py
-  - platform/src/editorial_tres/infrastructure/sqlite/event_store.py
-  - platform/tests/test_python_modules_compile.py
-  - platform/tests/test_private_factory_cli.py
-  - platform/tests/test_project_manifest.py
-  - platform/tests/application/test_private_factory.py
-  - platform/tests/application/test_app_book_compiler.py
-  - platform/tests/infrastructure/test_sqlite_event_store.py
-  - platform/tests/infrastructure/test_html_edition_renderer.py
-  - platform/tests/pilots/test_una_luz_extrana_private_factory.py
-  - projects/una-luz-extrana-en-buenos-aires/**
-  - exports/una-luz-extrana-en-buenos-aires/**
+  - tools/verify_active_task.py
 
 forbidden_paths:
   - AGENTS.md
-  - tools/**
   - capabilities/textual-analysis/**
   - capabilities/global-repetition/**
   - capabilities/edition-slice/**
+  - capabilities/private-factory-pilot/**
+  - docs/**
+  - platform/src/**
+  - platform/tests/**
   - plugins/**
   - constitution/**
+  - .github/workflows/**
 
 allowed_new_dependencies: []
 dependency_file_changes_authorized: false
 allowed_providers: []
 
 tests:
-  - name: python-modules-compile
+  - name: active-task-guard-focal
     cwd: platform
     command:
       - python
+      - -W
+      - error
       - -m
-      - compileall
+      - pytest
+      - -o
+      - asyncio_default_fixture_loop_scope=function
+      - tests/test_active_task_guard.py
       - -q
-      - src
-  - name: private-factory-cli-subprocess
+  - name: platform-suite
     cwd: platform
     command:
       - python
       - -m
       - pytest
-      - tests/test_private_factory_cli.py
-      - -q
-  - name: private-factory-focal
-    cwd: platform
-    command:
-      - python
-      - -m
-      - pytest
-      - tests/application/test_private_factory.py
-      - tests/application/test_app_book_compiler.py
-      - tests/infrastructure/test_sqlite_event_store.py
-      - tests/infrastructure/test_html_edition_renderer.py
-      - tests/test_project_manifest.py
-      - -q
-  - name: private-factory-real-manuscript
-    cwd: platform
-    command:
-      - python
-      - -m
-      - pytest
-      - tests/pilots/test_una_luz_extrana_private_factory.py
       - -q
   - name: platform-suite-strict
     cwd: platform
@@ -93,20 +55,21 @@ tests:
       - error
       - -m
       - pytest
+      - -o
+      - asyncio_default_fixture_loop_scope=function
       - -q
 
 commit_authorized: true
 push_authorized: true
 
 baseline:
-  head: b5053cb89ad54801a8dd1ecc31c3d4aef90b4d5e
+  head: 2cc60768637af0fc6bb81838cdf2f13dbf608565
+  allow_parent_head: true
+  allow_absent_preexisting: true
   preexisting_changes:
     - path: AGENTS.md
       status: '??'
       sha256: ad8e561bc069ff4b92fb9f90d0c7cc64ba881bf6f2327ab8c7266356d714d60c
-    - path: tools/verify_active_task.py
-      status: '??'
-      sha256: 462621e07d157da9b6da9f5851e09832a17bb9430f4167e1513852272b0a006c
     - path: platform/tests/lab_experiment_001_casa_del_rio.py
       status: '??'
       sha256: 48ca529e1198f1c86e9a1a8c256d9579ca9728dc8e32d9073282b797e049e1f7
