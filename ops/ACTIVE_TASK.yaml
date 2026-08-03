@@ -38,7 +38,7 @@ commit_authorized: false
 push_authorized: false
 
 baseline:
-  head: aa8eaf112f370819ac48accb0364c9fbdeb44874
-  allow_parent_head: false
+  head: a1d7c04d758f8a8e5bc5f979109c247fab3a0d06
+  allow_parent_head: true
   allow_absent_preexisting: true
   preexisting_changes: []
