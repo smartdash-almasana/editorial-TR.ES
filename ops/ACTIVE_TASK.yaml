@@ -1,19 +1,34 @@
 schema_version: 1
-task_id: DOCS-AUDIOBOOK-ENGINEERING-PUBLISH
+task_id: WEB-MVP-FLOW-FIX
 status: active
 mode: implementation
-capability: editorial.documentation
-parent_task: PF-3
-objective: publish_audiobook_engineering_specification
+capability: editorial.web
+parent_task: null
+objective: close_web_mvp_flow_from_decisions_to_download
 allowed_paths:
+- web/**
 - ops/ACTIVE_TASK.yaml
-- docs/engineering/TR.ES_Ingenieria_Audiolibros.md
-- docs/engineering/audiobook-engineering.md
 forbidden_paths: []
 allowed_new_dependencies: []
 dependency_file_changes_authorized: false
+dependency_files: []
 allowed_providers: []
-tests: []
+tests:
+- name: web-tests
+  cwd: platform
+  command:
+  - python
+  - -m
+  - pytest
+  - ../web
+  - -q
+- name: full-suite
+  cwd: platform
+  command:
+  - python
+  - -m
+  - pytest
+  - -q
 commit_authorized: true
 push_authorized: true
 baseline:
@@ -69,36 +84,6 @@ baseline:
   - path: platform/tests/infrastructure/test_audio_factory.py
     status: ??
     sha256: 4e98ba9c754c6422d71b56966135db0f4de44fdc77cb36ed5c50ab2282df3ce0
-  - path: web/INSTRUCCIONES.md
+  - path: docs/product/editorial-tres-factoria-multiformato.md
     status: ??
-    sha256: f61e998c172fc981839a7561ed3610a3d0a36d1aa1401bf9223635ec615cfa17
-  - path: web/README.md
-    status: ??
-    sha256: b38e644fdbcedff6026a84a638d877fa587f2f45475aca77270f9c9ed6792794
-  - path: web/README_START.md
-    status: ??
-    sha256: 42d81e5f69162b7ffef8044aa2e26ddd68080241e8d2830b43bacd307c84500d
-  - path: web/_validate_template.py
-    status: ??
-    sha256: fe582fb5b7832db60beeb6f690461a6d982e1006326fdf597972d4c8587d613c
-  - path: web/app.py
-    status: ??
-    sha256: be1268cc390a9b469faf5e733d18b01a36b9a1cf492c49814cdfb7019201b0a6
-  - path: web/requirements-web.txt
-    status: ??
-    sha256: f9bd39642f2d9b1c23777d7738f593aa06413d8190f9db2f558011654901b839
-  - path: web/run.py
-    status: ??
-    sha256: b3eaadab657a310282a5fbb63099b152aa0db939f9ea4f7e3401d914dd877828
-  - path: web/template.py
-    status: ??
-    sha256: 5044ca4de5c3f85d4d921ab25006694c6b70c8e919f1c9100a1d7f572291acef
-  - path: web/test_imports.py
-    status: ??
-    sha256: ba2baec7b114c412d7d60bed0e358989f5aa819a28a38bbe7d86ad384f8f9d53
-  - path: web/test_review_flow.py
-    status: ??
-    sha256: c02c2c93f70e8f74f5adfb064d397e8163c909d48d4f560573bfc7828517cf55
-  - path: web/verify_template.py
-    status: ??
-    sha256: dcd150afbf5fbdfc6d3757839f70c36ba35a26017cf5758a09ca097cd1fee038
+    sha256: e7476f218dbde6010d808c550f5f6c6e924a2da4a00601254bbb6a7b81cc898f
