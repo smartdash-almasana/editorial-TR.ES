@@ -1,44 +1,104 @@
 schema_version: 1
-task_id: PF-2-MD-IMPORT
+task_id: DOCS-AUDIOBOOK-ENGINEERING-PUBLISH
 status: active
 mode: implementation
-capability: editorial.private-factory
-parent_task: PF-2
-objective: normalize_markdown_title_and_chapter_import
-
+capability: editorial.documentation
+parent_task: PF-3
+objective: publish_audiobook_engineering_specification
 allowed_paths:
-  - ops/ACTIVE_TASK.yaml
-  - platform/src/editorial_tres/**
-  - platform/tests/**
-
+- ops/ACTIVE_TASK.yaml
+- docs/engineering/TR.ES_Ingenieria_Audiolibros.md
+- docs/engineering/audiobook-engineering.md
 forbidden_paths: []
-
 allowed_new_dependencies: []
 dependency_file_changes_authorized: false
 allowed_providers: []
-
-tests:
-  - name: private-factory-markdown-regression
-    cwd: platform
-    command:
-      - python
-      - -m
-      - pytest
-      - tests/application/test_private_factory.py
-      - -q
-  - name: platform-full-suite
-    cwd: platform
-    command:
-      - python
-      - -m
-      - pytest
-      - -q
-
-commit_authorized: false
-push_authorized: false
-
+tests: []
+commit_authorized: true
+push_authorized: true
 baseline:
-  head: a1d7c04d758f8a8e5bc5f979109c247fab3a0d06
+  head: 9974455cd2730dce5dd4dbdbd46df56d64cd7919
   allow_parent_head: true
-  allow_absent_preexisting: true
-  preexisting_changes: []
+  allow_absent_preexisting: false
+  preexisting_changes:
+  - path: platform/src/editorial_tres/application/commands.py
+    status: ' M'
+    sha256: e7f883d37f65d40040b1c6b4a08ede1334a75242cef5ae4225fefa5aa11a54a3
+  - path: platform/src/editorial_tres/application/handlers.py
+    status: ' M'
+    sha256: 50503a3d11bfb0d6d26af7832c306a67a436528a41ef394829e05ebe968fff2d
+  - path: platform/src/editorial_tres/composition.py
+    status: ' M'
+    sha256: ec67632e07633e904cb99134f594adc8d6c8237023397a539f843ececb4c72c5
+  - path: platform/src/editorial_tres/domain/events.py
+    status: ' M'
+    sha256: 1af8c27a02b419a44d7908b84af75aad3caef91e2043ac37c8ec25933d4e2cc8
+  - path: platform/src/editorial_tres/domain/work.py
+    status: ' M'
+    sha256: f54d2b55efa3eebf3e6bb2658a1e49cdd5d46ffdb6270b239ab295c6040fe104
+  - path: platform/src/editorial_tres/infrastructure/sqlite/event_store.py
+    status: ' M'
+    sha256: 6fbc6702dafb1b2b2b758f4bdab3aa4a97856956c746e48cba8eea45954a6304
+  - path: docs/architecture/audio-factory.md
+    status: ??
+    sha256: 8b545dda95a777ae323fc2846edf6a0bfad90b8329e37e20c5f751d74926f55b
+  - path: docs/contracts/audio-factory-api.md
+    status: ??
+    sha256: 74ca3b69c7f82dae4692cc50a0ee21e72ca95d4af7f07289a338075be5b2ab45
+  - path: docs/domain/audio-assets.md
+    status: ??
+    sha256: b3a712d9bac25d19e6c1830dbebf6b6d55a6e65da39166c5be1c128cdc834950
+  - path: docs/workflows/audiobook-production.md
+    status: ??
+    sha256: 229f93fe723553a290dacddce991c0a54beb184500d24deb0651ec32a312b80a
+  - path: platform/src/editorial_tres/application/audio_factory.py
+    status: ??
+    sha256: 34f95eaa4b1c419a1e7b47762e8a5c672e9d286c5c6452e72b12534880bbf825
+  - path: platform/src/editorial_tres/application/audio_projection.py
+    status: ??
+    sha256: f0a151a79ec31ab463d58bdd61bb388b789b12251033747ba55f32894b391a07
+  - path: platform/src/editorial_tres/domain/audio.py
+    status: ??
+    sha256: c026a40f05d1cf70e736c9f3709025ce088a3b8b12a31e40ece7fc36c71df225
+  - path: platform/tests/api/test_audio_factory.py
+    status: ??
+    sha256: 1c9e405026d880ca26f02ce17f58fe1a7c32774337a8a15d676d76548228fa53
+  - path: platform/tests/application/test_audio_factory.py
+    status: ??
+    sha256: 399c4d3d498dd7a3b5196dfadc0805600d445428aad376836ee04cd5c69810a2
+  - path: platform/tests/infrastructure/test_audio_factory.py
+    status: ??
+    sha256: 4e98ba9c754c6422d71b56966135db0f4de44fdc77cb36ed5c50ab2282df3ce0
+  - path: web/INSTRUCCIONES.md
+    status: ??
+    sha256: f61e998c172fc981839a7561ed3610a3d0a36d1aa1401bf9223635ec615cfa17
+  - path: web/README.md
+    status: ??
+    sha256: b38e644fdbcedff6026a84a638d877fa587f2f45475aca77270f9c9ed6792794
+  - path: web/README_START.md
+    status: ??
+    sha256: 42d81e5f69162b7ffef8044aa2e26ddd68080241e8d2830b43bacd307c84500d
+  - path: web/_validate_template.py
+    status: ??
+    sha256: fe582fb5b7832db60beeb6f690461a6d982e1006326fdf597972d4c8587d613c
+  - path: web/app.py
+    status: ??
+    sha256: be1268cc390a9b469faf5e733d18b01a36b9a1cf492c49814cdfb7019201b0a6
+  - path: web/requirements-web.txt
+    status: ??
+    sha256: f9bd39642f2d9b1c23777d7738f593aa06413d8190f9db2f558011654901b839
+  - path: web/run.py
+    status: ??
+    sha256: b3eaadab657a310282a5fbb63099b152aa0db939f9ea4f7e3401d914dd877828
+  - path: web/template.py
+    status: ??
+    sha256: 5044ca4de5c3f85d4d921ab25006694c6b70c8e919f1c9100a1d7f572291acef
+  - path: web/test_imports.py
+    status: ??
+    sha256: ba2baec7b114c412d7d60bed0e358989f5aa819a28a38bbe7d86ad384f8f9d53
+  - path: web/test_review_flow.py
+    status: ??
+    sha256: c02c2c93f70e8f74f5adfb064d397e8163c909d48d4f560573bfc7828517cf55
+  - path: web/verify_template.py
+    status: ??
+    sha256: dcd150afbf5fbdfc6d3757839f70c36ba35a26017cf5758a09ca097cd1fee038
